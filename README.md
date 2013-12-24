@@ -1,4 +1,6 @@
-examples
+Misc Area
 ========
 
-Area for trying out various java features.  I'm currently going through the O'Reilly book Learning Java.
+Sandbox type area to get things working and try out new features.
+
+For issues, see the JIRA server in the github project pages.
