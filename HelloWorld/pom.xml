@@ -27,7 +27,6 @@
     <connection>git@github.com:BruceGiese/maven-hello-world.git</connection>
     <url>git@github.com:BruceGiese/maven-hello-world.git</url>
     <developerConnection>git@github.com:BruceGiese/maven-hello-world.git</developerConnection>
-    <url>
   </scm>
 
   <build>
