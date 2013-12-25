@@ -24,9 +24,9 @@
   </dependencies>
 
   <scm>
-    <connection>scm:git@github.com:BruceGiese/maven-hello-world.git</connection>
-    <url>scm:git@github.com:BruceGiese/maven-hello-world.git</url>
-    <developerConnection>scm:git@github.com:BruceGiese/maven-hello-world.git</developerConnection>
+    <connection>scm:git:git@github.com:BruceGiese/maven-hello-world.git</connection>
+    <url>scm:git:git@github.com:BruceGiese/maven-hello-world.git</url>
+    <developerConnection>scm:git:git@github.com:BruceGiese/maven-hello-world.git</developerConnection>
   </scm>
 
   <build>
