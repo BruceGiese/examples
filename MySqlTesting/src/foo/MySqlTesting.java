@@ -83,13 +83,16 @@ public class MySqlTesting {
         	str = "INSERT INTO sentences (sentence,sentence_number,worker_id,votes,accepted) VALUES (\"" + TEXT_TO_ADD + "\"," + Integer.toString(lastSentence+1) + ",0,1,1)";
         	System.out.println("updating the database using: " + str);
         	rowCount = stmt.executeUpdate(str);
-        	
+        	if( rowCount == 1) {
+        		System.out.println("Success!");
+        	} else {
+        		System.out.println("We expected to update 1 row, but it updated " + rowCount);
+        	}
 
         } catch (SQLException qe) {
             System.out.println("    SQLException: " + qe.getMessage());
             System.out.println("    SQLState: " + qe.getSQLState());
             System.out.println("    VendorError: " + qe.getErrorCode());
-        	System.exit(-3);
         } catch (Exception e) {
         	System.out.println(e);
         } finally {
@@ -109,7 +112,5 @@ public class MySqlTesting {
         		stmt = null;
         	}
         }
-        
-        System.out.println("Success!");
 	}
 }
