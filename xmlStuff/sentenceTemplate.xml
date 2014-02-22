@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<QuestionForm xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2005-10-01/QuestionForm.xsd">
+  <Overview>
+    <Title>Write the Next Sentence in the Story</Title>
+    <FormattedContent><![CDATA[
+      Continue the Ever Turking Story.
+      <h2>Overview</h2>
+      This is part of a crowd sourcing project to write a story.  Four people will read the latest several sentences of
+      the story and write the next sentence.  Seven other people will vote on which of the four sentences is best.
+      The winning sentence gets added to the story and the cycle repeats again.
+      <p>
+      The story should be written as an over-the-top noir mystery with a dry sense of humor.
+      <h2>Story Setting</h2>
+      The story takes place in a sprawling generic city called Generic City located somewhere in the western USA.
+      The time period is current.  It is the month of August.  The story should take place within the span of a
+      few weeks at most.  Generic City has a lot of suburbs, malls, small office buildings, small public buildings,
+      etc.  It has an central industrial section with old, tall brick buildings which are just starting to be
+      gentrified.
+      <h2>The Characters</h2>
+      <h3>Raspian</h3>
+      Raspian is a twenty-something male hipster who looks a bit like a young Rasputin.  He lives semi-legally in
+      a loft in one of the industrial buildings that is mostly abandoned along with his girlfriend Hazel.  Rasputin
+      is intellectual, outside-the-system, and is clever at building things with available parts.  He works as a
+      highly specialized metal worker for a small company that fixes nearly-antique equipment.  Raspian is a
+      fearless introvert.
+      <h3>Hazel</h3>
+      Hazel is an upscale clothing retail worker from Beijing, China.  Short and athletic with perfectly silky
+      medium length black hair, guys hit on her constantly.  Hazel works hard to stay current with trends and
+      fashions.  It was Hazel's idea to move into the loft; she has ideas and plans.
+      <h2>The Situation</h2>
+      Raspian returns home late from work to find that someone has left a note on the entrance to his loft saying
+      "We have your monkey.  Meet us at the dark end of Danger Street at midnight or the monkey loses his suit and tie."
+      This makes no sense because neither Raspian nor Hazel have even seen a monkey outside of a zoo, especially one
+      wearing a suit and tie.  The GPS shows danger street in the middle of the old industrial section of Generic City.
+      <h2>Your Job</h2>
+      Below you will find the latest sentences in the story.  You will write a sentence to continue the story.  You
+      should avoid jerking the story around randomly.  You should accept completely whatever the previous sentences
+      say, no matter how ridiculous.  Keep in mind that you are competing with four other people who are also writing
+      the next sentence.  Seven other Turker workers will vote on which one they like best.
+      <p>
+      Good luck!
+      <h2>Payment Structure</h2>
+      You will receive the princely sum of one cent for writing a sentence.  If your sentence is selected in the
+      voting, then you will receive an additional 5 cents.
+      <h2>The Last 7 Sentence of The Story</h2>
+      replacement-text
+
+      <h2>Task</h2>
+    ]]></FormattedContent>
+  </Overview>
+  <Question>
+    <QuestionIdentifier>writeSentence</QuestionIdentifier>
+    <DisplayName>Write the next sentence in the story</DisplayName>
+    <QuestionContent>
+	<Text>
+	</Text>
+    </QuestionContent>
+
+
+    <AnswerSpecification>
+      <FreeTextAnswer>
+        <Constraints>
+            <Length minLength="3" maxLength="128"/>
+        </Constraints>
+        <NumberOfLinesSuggestion>3</NumberOfLinesSuggestion>
+      </FreeTextAnswer>
+    </AnswerSpecification>
+  </Question>
+</QuestionForm>
+
