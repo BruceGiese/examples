@@ -23,9 +23,7 @@ public class CreateSentenceHit {
 
 	public static void main(String[] args) {
 		SentenceHitXML hit = new SentenceHitXML(SENTENCE_TEMPLATE_FILE, OUTPUT_FILE_NAME);
-		
-		File hitFile = hit.getHitFile();
-		
+
 		try {
 			DynamicSentenceHitSection dhs = new DynamicSentenceHitSection(DATABASE, USERNAME, PASSWORD);
 			hit.addHitText(dhs.getString());
