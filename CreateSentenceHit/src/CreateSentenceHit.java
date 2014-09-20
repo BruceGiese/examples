@@ -3,8 +3,8 @@
  * @author Bruce Giese
  * @version 0.1
  * 
- * This reads the ever turking story database and create the next Mechanical Turk hit
- * for requestion workers to create the next sentence in the story.
+ * This reads the ever turking story database and creates the next Mechanical Turk hit
+ * for requesting workers to create the next sentence in the story.
  * 
  * Note that this requires JDOM 2.0.5 or later (see http://www.jdom.org)
  * 
