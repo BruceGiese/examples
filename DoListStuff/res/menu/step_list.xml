@@ -1,0 +1,18 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".StepActivity" >
+
+    <item android:id="@+id/new_step"
+          android:icon="@android:drawable/ic_menu_add"
+          android:title="@string/menu_new_step"
+          app:showAsAction="ifRoom|withText"
+          />
+
+    <item android:id="@+id/about"
+          android:icon="@android:drawable/ic_menu_help"
+          android:title="@string/menu_about"
+          app:showAsAction="ifRoom|withText"
+          />
+
+</menu>
