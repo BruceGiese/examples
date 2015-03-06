@@ -98,6 +98,12 @@ public class TiltFragment extends Fragment {
         mView = null;
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mOrientation = null;        // we create these for every configuration change
+    }
+
 
     /**
     * @hide
@@ -122,6 +128,12 @@ public class TiltFragment extends Fragment {
 
             t = (TextView)mView.findViewById(R.id.z_axis_value);
             t.setText(mOrientation.getZ());
+
+            t = (TextView)mView.findViewById(R.id.temperature);
+            t.setText(mOrientation.getTemp());
+
+            t = (TextView)mView.findViewById(R.id.humidity);
+            t.setText(mOrientation.getHumidity());
 
             // TODO: check the ranges and send a notification for bad posture. Use a Posture object?
 

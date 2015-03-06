@@ -84,6 +84,50 @@
             android:textSize="32sp"/>
     </RelativeLayout>
 
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:layout_marginTop="20dp">
+
+        <TextView
+            android:id="@+id/temperature_label"
+            android:text="@string/temperature_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/temperature"
+            android:text="@string/axis_empty_string"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_toRightOf="@id/temperature_label"/>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <TextView
+            android:id="@+id/humidity_label"
+            android:text="@string/humidity_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/humidity"
+            android:text="@string/axis_empty_string"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_toRightOf="@id/humidity_label"/>
+    </RelativeLayout>
+
+
     <Button
         android:text="@string/start_tilt_detection"
         android:id="@+id/start_stop_button"

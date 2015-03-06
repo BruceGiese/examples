@@ -17,12 +17,12 @@ import android.view.MenuItem;
  * run as a service, define acceptable ranges for posture, and alert the user
  * to bad posture and maybe consistently good posture.
  */
-public class PerfectPosture extends ActionBarActivity {
+public class PerfectPostureActivity extends ActionBarActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_tilt);
+        setContentView(R.layout.activity_perfect_posture);
 
         FragmentManager fm = getSupportFragmentManager();
         Fragment f = fm.findFragmentById(R.id.fragment_container);

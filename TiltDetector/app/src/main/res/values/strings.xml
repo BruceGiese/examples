@@ -7,6 +7,10 @@
     <string name="x_axis_label">X-axis</string>
     <string name="y_axis_label">Y-axis</string>
     <string name="z_axis_label">Z-axis</string>
+    <string name="temperature_label">Ambient Temperature</string>
+    <string name="temperature_f">degrees F</string>
+    <string name="percent_h">%</string>
+    <string name="humidity_label">Humidity</string>
     <string name="start_tilt_detection">Start Tilt Detection</string>
     <string name="stop_tilt_detection">Stop Tilt Detection</string>
     <string name="no_gravity_sensor">No gravity sensor was detected, sorry.</string>
