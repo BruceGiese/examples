@@ -8,11 +8,23 @@
         revision="20.0.0"
         sha1="686344a780033e4ba22b926cd225f8d4941247e6"/>
     <item
+        dex="/home/bruce/git-misc/misc/DoListStuff/app/build/intermediates/pre-dexed/debug/classes-7b98c66d2b7c608f88108d1dae155fec85e6988c.jar"
+        jar="/home/bruce/git-misc/misc/DoListStuff/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/21.0.0/classes.jar"
+        jumboMode="false"
+        revision="20.0.0"
+        sha1="95fd37732ec852e99f07eeb516a3650172f1d136"/>
+    <item
         dex="/home/bruce/AndroidStudioProjects/DoListStuff/app/build/intermediates/pre-dexed/debug/classes-bf709b8eac960c8e1c6bf4dc3e8a3b56b06c2ba1.jar"
         jar="/home/bruce/AndroidStudioProjects/DoListStuff/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/21.0.0/classes.jar"
         jumboMode="false"
         revision="20.0.0"
         sha1="95fd37732ec852e99f07eeb516a3650172f1d136"/>
+    <item
+        dex="/home/bruce/git-misc/misc/DoListStuff/app/build/intermediates/pre-dexed/debug/internal_impl-21.0.0-2d2a083aa146bb3e09881b1d564fc12727554785.jar"
+        jar="/home/bruce/git-misc/misc/DoListStuff/app/build/intermediates/exploded-aar/com.android.support/support-v4/21.0.0/libs/internal_impl-21.0.0.jar"
+        jumboMode="false"
+        revision="20.0.0"
+        sha1="1609e6d42d0480b0f4188e2c29f75388fa12a8f0"/>
     <item
         dex="/home/bruce/AndroidStudioProjects/DoListStuff/app/build/intermediates/pre-dexed/debug/internal_impl-21.0.0-73ad17f3638a37bd32213b33eb343cc6eb1b5982.jar"
         jar="/home/bruce/AndroidStudioProjects/DoListStuff/app/build/intermediates/exploded-aar/com.android.support/support-v4/21.0.0/libs/internal_impl-21.0.0.jar"
@@ -22,6 +34,18 @@
     <item
         dex="/home/bruce/AndroidStudioProjects/DoListStuff/app/build/intermediates/pre-dexed/debug/gson-2.3.1-f482cc61fe3cc6b308adfa7846f4a7901956d4c8.jar"
         jar="/home/bruce/AndroidStudioProjects/DoListStuff/app/libs/gson-2.3.1.jar"
+        jumboMode="false"
+        revision="20.0.0"
+        sha1="ecb6e1f8e4b0e84c4b886c2f14a1500caf309757"/>
+    <item
+        dex="/home/bruce/git-misc/misc/DoListStuff/app/build/intermediates/pre-dexed/debug/classes-61fec5a3b765cee0cd19ec9641a97f1f90d71dd6.jar"
+        jar="/home/bruce/git-misc/misc/DoListStuff/app/build/intermediates/exploded-aar/com.android.support/support-v4/21.0.0/classes.jar"
+        jumboMode="false"
+        revision="20.0.0"
+        sha1="686344a780033e4ba22b926cd225f8d4941247e6"/>
+    <item
+        dex="/home/bruce/git-misc/misc/DoListStuff/app/build/intermediates/pre-dexed/debug/gson-2.3.1-2362f5d8af2560ea6331ac569f0b7c9f57e7eda3.jar"
+        jar="/home/bruce/git-misc/misc/DoListStuff/app/libs/gson-2.3.1.jar"
         jumboMode="false"
         revision="20.0.0"
         sha1="ecb6e1f8e4b0e84c4b886c2f14a1500caf309757"/>
