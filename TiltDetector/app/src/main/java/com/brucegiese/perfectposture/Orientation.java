@@ -47,20 +47,24 @@ public class Orientation implements SensorEventListener {
     /**
      * Begin sensing the orientation of the device.
      * Can only be called once after creation or stopping orientation.
-     * @return whether the device has the proper sensor.
+     * @return whether the device has any of the sensors (gravity, temp, humidity)
      */
     public boolean startOrienting() {
+        boolean result = false;
         if (mGravitySensor != null) {
             // Use the slowest rate possible, although the Mgr just uses this as a suggestion.
             mSensorManager.registerListener(this, mGravitySensor, SensorManager.SENSOR_DELAY_NORMAL);
-            // UPDATE
-            mSensorManager.registerListener(this, mTemperatureSensor, SensorManager.SENSOR_DELAY_NORMAL);
-            mSensorManager.registerListener(this, mHumiditySensor, SensorManager.SENSOR_DELAY_NORMAL);
-        } else {
-            // No gravity sensor on this device!
-            return false;
+            result = true;
         }
-        return true;
+        if (mTemperatureSensor != null) {
+            mSensorManager.registerListener(this, mTemperatureSensor, SensorManager.SENSOR_DELAY_NORMAL);
+            result = true;
+        }
+        if (mHumiditySensor != null) {
+            mSensorManager.registerListener(this, mHumiditySensor, SensorManager.SENSOR_DELAY_NORMAL);
+            result = true;
+        }
+        return result;
     }
 
     /**
