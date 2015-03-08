@@ -4,6 +4,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -18,6 +19,7 @@ import android.view.MenuItem;
  * to bad posture and maybe consistently good posture.
  */
 public class PerfectPostureActivity extends ActionBarActivity {
+    private static final String TAG = "com.brucegiese.activity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,18 +37,25 @@ public class PerfectPostureActivity extends ActionBarActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.tilt, menu);
+        getMenuInflater().inflate(R.menu.perfect_posture_menu, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // TODO: add a setting for changing the update interval.
-        // TODO: add settings for ranges of good posture.
+
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
+        if (id == R.id.update_interval) {
+            Log.d(TAG, "Menu item update_interval selected");
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        Log.d(TAG, "The menu is about to be shown");
+
+        return true;
     }
 }

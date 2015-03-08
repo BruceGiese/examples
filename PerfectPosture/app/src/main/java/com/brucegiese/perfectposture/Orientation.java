@@ -156,6 +156,14 @@ public class Orientation implements SensorEventListener {
         }
     }
 
+    public int getZInt() {
+        if( mGravity != null) {
+            return Math.round(mGravity[2] * (MAX_INTEGER/G_FORCE) + ALMOST_HALF);
+        } else {
+            return 0;
+        }
+    }
+
     /**
      * UPDATE
      * @return

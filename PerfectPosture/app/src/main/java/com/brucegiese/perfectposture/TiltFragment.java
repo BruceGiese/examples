@@ -1,8 +1,14 @@
 package com.brucegiese.perfectposture;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.TaskStackBuilder;
+import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -135,12 +141,17 @@ public class TiltFragment extends Fragment {
             t = (TextView)mView.findViewById(R.id.humidity);
             t.setText(mOrientation.getHumidity());
 
-            // TODO: check the ranges and send a notification for bad posture. Use a Posture object?
+
+            if( mOrientation.getZInt() > 4) {
+                badPostureDetected();
+            }
 
         } else {
             // Throw an exception to stop it
             throw new RuntimeException("Repeating work was left running after onDestroyView");
         }
+
+
     }
 
 
@@ -165,6 +176,51 @@ public class TiltFragment extends Fragment {
     private void turnOffOrientation() {
         mHandler.removeCallbacks(mDoPeriodicUiWork);
         mOrientation.stopOrienting();
+    }
+
+
+    /**
+     * @hide
+     *
+     * Send a notification of bad posture to the user
+     *
+     */
+    private void badPostureDetected() {
+        // TODO: NOTES ON NEW FUNCTIONALITY:
+        //      Notifications should NOT be used if the app is currently on screen
+        //      Using LEDs to provide a specific notification might interfere with other stuff
+        //      I should add a notification action so the user can return to the app
+        // TODO: Remove this stuff
+        NotificationManager nm = (NotificationManager) getActivity().getSystemService(getActivity().NOTIFICATION_SERVICE);
+        NotificationCompat.Builder notif = new NotificationCompat.Builder(getActivity())
+                .setContentTitle("TESTING")
+                .setContentText("content text here")
+                .setSmallIcon(android.R.drawable.ic_dialog_alert)
+                .setLights(0xFFff0000, 200, 200);
+        // Keep the default priority, PRIORITY_DEFAULT(0)
+
+        // Use a fixed notification ID so we don't create endless notifications
+        int LED_NOTIFICATION_ID = 1;
+        Intent resultIntent = new Intent(getActivity(), PerfectPostureActivity.class);
+
+        // Best Practice: ensure that all users can get to the functionality in the
+        // Activity by having it start when the users click the notification.
+        PendingIntent resultPendingIntent;
+
+        // If the device supports preserving navigation when starting an Activity
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            TaskStackBuilder stackBuilder = TaskStackBuilder.create(getActivity());
+            stackBuilder.addParentStack(PerfectPostureActivity.class);
+            stackBuilder.addNextIntent(resultIntent);
+            resultPendingIntent = stackBuilder.getPendingIntent(
+                    0, PendingIntent.FLAG_UPDATE_CURRENT);
+        } else {
+            // On older devices, don't bother preserving navigation
+            resultPendingIntent =
+                    PendingIntent.getActivity(getActivity(), 0, resultIntent, 0);
+        }
+        notif.setContentIntent(resultPendingIntent);
+        nm.notify(LED_NOTIFICATION_ID, notif.build());
     }
 
 }

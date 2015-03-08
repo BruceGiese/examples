@@ -2,7 +2,7 @@
 <resources>
 
     <string name="app_name">PerfectPosture</string>
-    <string name="action_settings">Settings</string>
+    <string name="update_interval">Update Interval</string>
     <string name="axis_empty_string">---</string>
     <string name="x_axis_label">X-axis</string>
     <string name="y_axis_label">Y-axis</string>
