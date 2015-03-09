@@ -1,7 +1,10 @@
 package com.brucegiese.perfectposture;
 
+import android.content.ComponentName;
+import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -17,11 +20,12 @@ import android.widget.Toast;
  */
 public class TiltFragment extends Fragment {
     private static final String TAG = "com.brucegiese.tiltdetector.tiltfragment";
-    private static final int DEFAULT_REPEAT_INTERVAL = 1000;    // units of milliseconds
-    private static final int DEFAULT_MAX_Z_VALUE = 4;
     private static final String SAVED_BUTTON_STATE = "savedButtonState";
+    private static final String SAVED_ORIENTATION_SERVICE = "savedOrientationService";
     private View mView;
     private boolean mButtonState = false;
+    private OrientationService mOrientationService;
+    private IBinder mBinder;
 
     public TiltFragment() { }
 
@@ -32,6 +36,9 @@ public class TiltFragment extends Fragment {
         if( savedInstanceState != null) {
             mButtonState = savedInstanceState.getBoolean(SAVED_BUTTON_STATE, false);
         }
+
+        mOrientationService = new OrientationService();
+        // TODO: Add the parameter handling here and link it to actual configuration
     }
 
     @Override
@@ -42,7 +49,7 @@ public class TiltFragment extends Fragment {
         mView = inflater.inflate(R.layout.fragment_tilt, container, false);
 
         if( mButtonState ) {        // This could be on after a configuration change
-            turnOnOrientation();
+            mOrientationService.startChecking(getActivity());
             Button button = (Button)mView.findViewById(R.id.start_stop_button);
             button.setText(R.string.stop_tilt_detection);
         }
@@ -52,11 +59,11 @@ public class TiltFragment extends Fragment {
             @Override
            public void onClick(View v) {
                 if( mButtonState ) {
-                    turnOffOrientation();
+                    mOrientationService.stopChecking(getActivity());
                     ((Button)v).setText(R.string.start_tilt_detection);
                     mButtonState = false;
                 } else {
-                    turnOnOrientation();
+                    mOrientationService.startChecking(getActivity());
                     ((Button)v).setText(R.string.stop_tilt_detection);
                     mButtonState = true;
                 }
@@ -79,7 +86,6 @@ public class TiltFragment extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putBoolean(SAVED_BUTTON_STATE, mButtonState);
-        // TODO: I think this is going to stop working now (after moving to use a service)
     }
 
     @Override
@@ -91,6 +97,22 @@ public class TiltFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
+    }
+
+
+    /*
+    *       Service Related Stuff
+     */
+
+    private class OrientationConnection implements ServiceConnection {
+
+        public void onServiceConnected( ComponentName name, IBinder service) {
+            mBinder = service;
+        }
+
+        public void onServiceDisconnected( ComponentName name) {
+            // We really don't care about this
+        }
     }
 
 

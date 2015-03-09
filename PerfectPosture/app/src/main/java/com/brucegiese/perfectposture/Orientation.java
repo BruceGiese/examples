@@ -60,10 +60,11 @@ public class Orientation implements SensorEventListener {
      * Technically you can call this repeatedly without any bad effects.
      */
     public void stopOrienting() {
-        // Best practice: Make sure to call this when the Activity is paused to save battery life.
+        // Make sure this gets called when the service stops!
         mSensorManager.unregisterListener(this);
         mGravity = null;
     }
+
 
     /**
     *  @hide

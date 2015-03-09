@@ -3,6 +3,7 @@ package com.brucegiese.perfectposture;
 import android.app.IntentService;
 import android.content.Intent;
 import android.content.Context;
+import android.os.IBinder;
 import android.util.Log;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -17,17 +18,19 @@ import java.util.concurrent.TimeUnit;
  */
 public class OrientationService extends IntentService {
     private static final String TAG = "com.brucegiese.service";
+    private static final int DEFAULT_UPDATE_INTERVAL = 1;    // units of seconds
+    private static final int DEFAULT_Z_AXIS_THRESHOLD = 4;
     private Orientation mOrientation = null;
     private ScheduledExecutorService mScheduler;
     private ScheduledFuture mScheduledFuture;
-    private int mUpdateInterval;
-    private int mZAxisThreshold;
+    private int mUpdateInterval = DEFAULT_UPDATE_INTERVAL;
+    private int mZAxisThreshold = DEFAULT_Z_AXIS_THRESHOLD;
     private int mPercentBadPosture;      // 0 to 100
 
     /*
     *   This uses the recommended method for implementing an IntentService.  A lot of the
     *   extra code comes from having to receive requests from the application and then
-    *   send that same information down to the background thread.  Fortunately, you
+    *   sending that same information down to the background thread.  Fortunately, you
     *   can ignore most of this stuff and focus on the public methods below.
      */
 
@@ -49,49 +52,79 @@ public class OrientationService extends IntentService {
     // Broadcast receivers must create an Intent filter with this Action name to receive the results
     public static final String GET_ALL_RESULTS
             = "com.brucegiese.perfectposture.BROADCAST_TYPE_GET_ALL_RESULTS";
-    // This is one of the results sent back to the broadcast receiver.
+    // This is one of the results sent back to the broadcast receiver. % of overall time.
     public static final String PERCENT_BAD_POSTURE
             = "com.brucegiese.perfectposture.PERCENT_BAD_POSTURE";
 
 
+
+    public OrientationService() {
+        super("OrientationService");
+        Log.d(TAG, "OrientationService created");
+    }
+
+
     @Override
     public void onCreate() {
-        // TODO: move the constructor stuff into here
+        super.onCreate();
+        Log.d(TAG, "OrientationService onCreate() called");
+        if( mOrientation == null) {
+            mOrientation = new Orientation(this);
+        }
     }
 
+    // Documentation says don't Override onStartCommand().  If you do, make sure to
+    // return super.onStartCommand() with the same args.
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
+        Log.d(TAG, "onStartCommand() called");
+        return super.onStartCommand(intent, flags, startId);
     }
 
-    @Override
-    public void IBinder onBind(Intent intent) {
 
+    @Override
+    public IBinder onBind(Intent intent) {
+        // TODO: need to support stopping the service here.  Also getting results.
+        return null;
     }
 
     @Override
     public void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "OrientationService onDestroy() called");
 
+        // Make absolutely sure that we've stopped everything and cleaned up.
+        // This is guaranteed to be the last thing called.
+        if( mScheduledFuture != null ) {
+            Log.d(TAG, "...mScheduledFuture was not null");
+            mScheduledFuture.cancel(true);
+            mScheduledFuture = null;
+        }
+        if( mOrientation != null ) {
+            Log.d(TAG, "...mOrientation was not null");
+            mOrientation.stopOrienting();
+            mOrientation = null;
+        }
     }
+
 
 
     /**
      * Start the background service running.  It will continue running after the app terminates.
-     * This will send out a notification.  If the user clicks on the notification, it will
-     * re-open the application allowing the user to stop the service.
+     * This will immediately send out a notification showing the service is running.  If the
+     * user clicks on the notification, it will re-open the application allowing the user to
+     * stop the service, if desired.
      *
      * This service also sends another notification if they are holding the device outside
      * the range of allowed orientation.
      *
      * @param context
-     * @param updateInterval    How often to process the data that's streaming in.
-     * @param zAxisThreshold    How much tilt is allowed before we complain to the user
      */
-    public static void startChecking(Context context, String updateInterval, String zAxisThreshold) {
+    public static void startChecking(Context context) {
+        Log.d(TAG, "OrientationService startChecking() called");
+
         Intent intent = new Intent(context, OrientationService.class);
         intent.setAction(ACTION_START);
-        intent.putExtra(EXTRA_UPDATE_INTERVAL, updateInterval);
-        intent.putExtra(EXTRA_Z_AXIS_THRESHOLD, zAxisThreshold);
         context.startService(intent);
     }
 
@@ -100,6 +133,7 @@ public class OrientationService extends IntentService {
      * @param context
      */
     public static void stopChecking(Context context) {
+        Log.d(TAG, "OrientationService stopChecking() called");
         Intent intent = new Intent(context, OrientationService.class);
         intent.setAction(ACTION_STOP);
         context.startService(intent);
@@ -123,7 +157,7 @@ public class OrientationService extends IntentService {
      * @param updateInterval    How often to process the data that's streaming in.
      * @param zAxisThreshold    How much tilt is allowed before we complain to the user
      */
-    public static void setParams(Context context, String updateInterval, String zAxisThreshold) {
+    public static void setParams(Context context, int updateInterval, int zAxisThreshold) {
         Intent intent = new Intent(context, OrientationService.class);
         intent.setAction(ACTION_START);
         intent.putExtra(EXTRA_UPDATE_INTERVAL, updateInterval);
@@ -132,38 +166,34 @@ public class OrientationService extends IntentService {
     }
 
 
-    public OrientationService() {
-        super("OrientationService");
-        if( mOrientation == null) {
-            mOrientation = new Orientation(this);
-        }
-    }
+
+    /*
+    *       The stuff below runs on a background thread
+     */
 
     @Override
     protected void onHandleIntent(Intent intent) {
         if (intent != null) {
             final String action = intent.getAction();
             if (ACTION_START.equals(action)) {
-                final String updateInterval = intent.getStringExtra(EXTRA_UPDATE_INTERVAL);
-                final String zAxisThreshold = intent.getStringExtra(EXTRA_Z_AXIS_THRESHOLD);
-                handleStartChecking(this, updateInterval, zAxisThreshold);
+                handleStartChecking();
             } else if (ACTION_STOP.equals(action)) {
                 handleStopChecking();
             } else if (ACTION_GET.equals(action)) {
                 handleGetResults();
             } else if (ACTION_SET_PARAMS.equals(action)) {
-                final String updateInterval = intent.getStringExtra(EXTRA_UPDATE_INTERVAL);
-                final String zAxisThreshold = intent.getStringExtra(EXTRA_Z_AXIS_THRESHOLD);
+                final int updateInterval =
+                        intent.getIntExtra(EXTRA_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL);
+                final int zAxisThreshold =
+                        intent.getIntExtra(EXTRA_Z_AXIS_THRESHOLD, DEFAULT_Z_AXIS_THRESHOLD);
                 handleSetParams(updateInterval, zAxisThreshold);
             }
         }
     }
 
-
-    private void handleStartChecking(Context context, String updateInterval, String zAxisThreshold) {
+    private void handleStartChecking() {
+        Log.d(TAG, "background service thread handleStartChecking()");
         mPercentBadPosture = 0;
-        mUpdateInterval = Integer.valueOf(updateInterval);
-        mZAxisThreshold = Integer.valueOf(zAxisThreshold);
         mOrientation.startOrienting();
 
         // We use an additional thread for the periodic execution task.
@@ -174,30 +204,30 @@ public class OrientationService extends IntentService {
                         mUpdateInterval,
                         mUpdateInterval,
                         TimeUnit.SECONDS);
-        Log.d(TAG, "background service thread handleStartChecking()");
     }
 
     private void handleStopChecking() {
         Log.d(TAG, "background service thread handleStopChecking()");
 
         mScheduledFuture.cancel(true);
+        mScheduledFuture = null;
         mOrientation.stopOrienting();
         mOrientation = null;
-        stopSelf();             // turn off this service
+        stopSelf();
 
     }
 
-    private void handleSetParams(String updateInterval, String zAxisThreshold) {
+    private void handleSetParams(int updateInterval, int zAxisThreshold) {
         Log.d(TAG, "background service thread handleSetParams");
 
-        Log.e(TAG, "handleSetParams is not implemented yet");
-        mUpdateInterval = Integer.valueOf(updateInterval);
-        // TODO: change the parameters to these values on the fly
-
+        mUpdateInterval = updateInterval;
+        mZAxisThreshold = zAxisThreshold;
     }
 
-
     private void handleGetResults() {
+        // TODO:  https://guides.codepath.com/android/Starting-Background-Services
+        // This guide shows the best way to do this.
+
         Log.d(TAG, "background service thread handleGetResults");
         Intent intent = new Intent();
         intent.setAction(GET_ALL_RESULTS);
@@ -206,9 +236,13 @@ public class OrientationService extends IntentService {
         sendBroadcast(intent);
     }
 
+
+
+
     /**
      * @hide
      * This runs periodically in the background (yet another thread).
+     * NOTE: This does NOT run on the same thread as the handleXXX stuff above!
      */
     Runnable mDoPeriodicWork = new Runnable() {   // must be executed in the UI thread
         @Override
@@ -220,5 +254,10 @@ public class OrientationService extends IntentService {
             Log.d(TAG, "x=" + x + ", y=" + y + ", z=" + z);
         }
     };
+
+
+
+
+
 
 }
