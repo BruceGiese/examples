@@ -130,6 +130,7 @@ public class OrientationService extends Service {
         try {
             mPercentBadPosture = 0;
             mOrientation.startOrienting();
+            debugCounter = 0;
 
             if (mScheduledFuture == null) {
                 // We use an additional thread for the periodic execution task.
@@ -180,7 +181,7 @@ public class OrientationService extends Service {
             Log.d(TAG, "x=" + x + ", y=" + y + ", z=" + z);
 
             // TODO: REMOVE THIS: this stops the service after 15 seconds so we don't get stuck.
-            if( debugCounter++ > 15) {
+            if( debugCounter++ > 30) {
                 debugCounter = 0;
                 Log.d(TAG, "STOPPING THE SERVICE due to the debugCounter");
                 stopChecking();
