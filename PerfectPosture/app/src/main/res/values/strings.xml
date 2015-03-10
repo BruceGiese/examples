@@ -16,5 +16,7 @@
     <string name="no_gravity_sensor">No gravity sensor was detected, sorry.</string>
     <string name="no_data">---</string>
     <string name="no_service">Gravity service is not currently available</string>
+    <string name="service_notification_text">PerfectPosture service is running</string>
+    <string name="posture_notification_text">Hold the phone more vertically</string>
 
 </resources>

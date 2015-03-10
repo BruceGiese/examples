@@ -1,13 +1,16 @@
 package com.brucegiese.perfectposture;
 
-import android.app.IntentService;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Intent;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
+import android.os.Vibrator;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -24,18 +27,27 @@ public class OrientationService extends Service {
     private static final String TAG = "com.brucegiese.service";
     public static final int MSG_START_MONITORING = 1;
     public static final int MSG_STOP_MONITORING = 2;
-    public static final int MSG_DO_NOTHING = 3;
 
-    private static final int DEFAULT_UPDATE_INTERVAL = 1;    // units of seconds
-    private static final int DEFAULT_Z_AXIS_THRESHOLD = 4;
+    private static final int DEFAULT_UPDATE_INTERVAL = 1;           // units of seconds
+    private static final int DEFAULT_Z_AXIS_POS_THRESHOLD = 20;    // units of degrees
+    private static final int DEFAULT_Z_AXIS_NEG_THRESHOLD = 20;     // units of degrees
 
     private Orientation mOrientation = null;
     private ScheduledExecutorService mScheduler;
     private ScheduledFuture mScheduledFuture;
 
     private int mUpdateInterval = DEFAULT_UPDATE_INTERVAL;
-    private int mZAxisThreshold = DEFAULT_Z_AXIS_THRESHOLD;
-    private int mPercentBadPosture;      // 0 to 100
+    private int mZAxisPosThreshold = DEFAULT_Z_AXIS_POS_THRESHOLD;
+    private int mZAxisNegThreshold = DEFAULT_Z_AXIS_NEG_THRESHOLD;
+    private PostureResults mResults = null;
+
+    private Vibrator mVibrator = null;
+    private int VIBRATION_TIME = 200;        // units of milliseconds
+    private static final int SERVICE_NOTIFICATION_ID = 1;
+    private static final int POSTURE_NOTIFICATION_ID = 2;
+    private static final String SERVICE_NOTIFICATION_TITLE = "serviceNotification";
+    private static final String POSTURE_NOTIFICATION_TITLE = "postureNotification";
+    private NotificationManager mNotificationManager;
 
     private int debugCounter = 0;
 
@@ -48,6 +60,15 @@ public class OrientationService extends Service {
         if( mOrientation == null) {
             mOrientation = new Orientation(this);
         }
+        if( mResults == null) {
+            mResults = new PostureResults();
+            mResults.resetResults();
+        }
+        if( mVibrator == null) {
+            mVibrator = (Vibrator)getSystemService(VIBRATOR_SERVICE);
+        }
+
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
     }
 
     // Documentation says don't Override onStartCommand().  If you do, make sure to
@@ -118,6 +139,8 @@ public class OrientationService extends Service {
         } else {
             Log.e(TAG, "mOrientation was null in onDestroy().  That should never happen.");
         }
+
+        mNotificationManager.cancel(SERVICE_NOTIFICATION_ID);
     }
 
 
@@ -128,7 +151,6 @@ public class OrientationService extends Service {
      */
     private void startChecking() {
         try {
-            mPercentBadPosture = 0;
             mOrientation.startOrienting();
             debugCounter = 0;
 
@@ -142,6 +164,18 @@ public class OrientationService extends Service {
                                 mUpdateInterval,
                                 mUpdateInterval,
                                 TimeUnit.SECONDS);
+
+                Intent resultIntent = new Intent(this, PerfectPostureActivity.class);
+                PendingIntent pIntent = PendingIntent.getActivity(this, 0, resultIntent, 0);
+                NotificationCompat.Builder mBuilder =
+                        new NotificationCompat.Builder(this)
+                                .setSmallIcon(R.drawable.ic_posture)
+                                .setContentIntent(pIntent)
+                                .setContentTitle(SERVICE_NOTIFICATION_TITLE)
+                                .setContentText(getResources().getString(R.string.service_notification_text));
+                mNotificationManager.notify(SERVICE_NOTIFICATION_ID, mBuilder.build());
+                // TODO: add TaskStackBuilder if API is > min
+
             } else {
                 Log.i(TAG, "startChecking() was called when checking was already running");
             }
@@ -177,11 +211,21 @@ public class OrientationService extends Service {
             int x = mOrientation.getX();
             int y = mOrientation.getY();
             int z = mOrientation.getZ();
-
             Log.d(TAG, "x=" + x + ", y=" + y + ", z=" + z);
 
-            // TODO: REMOVE THIS: this stops the service after 15 seconds so we don't get stuck.
-            if( debugCounter++ > 30) {
+            if( (z > mZAxisPosThreshold) || (z < -mZAxisNegThreshold)) {
+                if( mResults.recordBadSample() ) {
+                    badPostureAlerts();
+                }
+            } else {
+                if( mResults.recordGoodSample() ) {
+                    goodPostureAlerts();
+                }
+            }
+
+
+            // TODO: REMOVE THIS: this stops the service after 5 minutes so we don't get stuck.
+            if( debugCounter++ > 300) {
                 debugCounter = 0;
                 Log.d(TAG, "STOPPING THE SERVICE due to the debugCounter");
                 stopChecking();
@@ -189,5 +233,61 @@ public class OrientationService extends Service {
         }
     };
 
+    /**
+     * Send out all alerts associated with a bad posture event
+     */
+    private void badPostureAlerts() {
+        Log.d(TAG, "Posture is bad!");
+        if( mVibrator != null) {
+            Log.d(TAG,"vibrate");
+            mVibrator.vibrate(800);
+
+        } else {
+            Log.d(TAG, "no vibrate on this device");
+        }
+
+        Intent resultIntent = new Intent(this, PerfectPostureActivity.class);
+        PendingIntent pIntent = PendingIntent.getActivity(
+                this, 0, resultIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(this)
+                        .setSmallIcon(R.drawable.ic_posture_alert)
+                        .setContentIntent(pIntent)
+                        .setContentTitle(POSTURE_NOTIFICATION_TITLE)
+                        .setContentText(getResources().getString(R.string.posture_notification_text));
+        mNotificationManager.notify(SERVICE_NOTIFICATION_ID, mBuilder.build());
+    }
+
+    /**
+     * Send out all alerts associated with a good posture event
+     */
+    private void goodPostureAlerts() {
+        Log.d(TAG, "Posture just got good!");
+        if( mVibrator != null) {
+            Log.d(TAG,"vibrate");
+            mVibrator.vibrate(30);
+        } else {
+            Log.d(TAG, "no vibrate on this device");
+        }
+
+        Intent resultIntent = new Intent(this, PerfectPostureActivity.class);
+        PendingIntent pIntent = PendingIntent.getActivity(this, 0, resultIntent, 0);
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(this)
+                        .setSmallIcon(R.drawable.ic_posture)
+                        .setContentIntent(pIntent)
+                        .setContentTitle(SERVICE_NOTIFICATION_TITLE)
+                        .setContentText(getResources().getString(R.string.service_notification_text));
+        mNotificationManager.notify(SERVICE_NOTIFICATION_ID, mBuilder.build());
+    }
+
+
+    /**
+     * @hide
+     * This resets the measurement results
+     */
+    private void resetResults() {
+
+    }
 
 }

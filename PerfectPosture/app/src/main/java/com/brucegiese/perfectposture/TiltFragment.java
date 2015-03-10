@@ -1,6 +1,9 @@
 package com.brucegiese.perfectposture;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
@@ -8,7 +11,9 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.os.Vibrator;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,6 +29,7 @@ import android.widget.Toast;
 public class TiltFragment extends Fragment {
     private static final String TAG = "com.brucegiese.tiltfrag";
     private static final String SAVED_BUTTON_STATE = "savedButtonState";
+
     private View mView;
     private boolean mButtonState = false;
     private Messenger mService;
@@ -63,6 +69,8 @@ public class TiltFragment extends Fragment {
         if (mButtonState) {        // This could be on after a configuration change
             button.setText(R.string.stop_tilt_detection);
         }
+
+        // TODO: Add a button for terminating the service... or terminate it when stopping.
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
