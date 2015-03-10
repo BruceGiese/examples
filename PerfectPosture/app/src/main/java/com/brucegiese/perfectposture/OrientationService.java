@@ -25,6 +25,11 @@ import java.util.concurrent.TimeUnit;
  */
 public class OrientationService extends Service {
     private static final String TAG = "com.brucegiese.service";
+
+    // This is dangerous because it can be abused and cause race conditions.  We need this
+    // global status in order for the activity to detect if the service is running or not.
+    public static boolean sCheckingIsRunning = false;
+
     public static final int MSG_START_MONITORING = 1;
     public static final int MSG_STOP_MONITORING = 2;
 
@@ -94,12 +99,14 @@ public class OrientationService extends Service {
 
                 case MSG_START_MONITORING:
                     Log.d(TAG, "got message: MSG_START_MONITORING");
+                    sCheckingIsRunning = true;
                     startChecking();
                     break;
 
                 case MSG_STOP_MONITORING:
                     Log.d(TAG, "got message: MSG_STOP_MONITORING");
                     stopChecking();
+                    sCheckingIsRunning = false;
                     break;
 
                 default:
@@ -145,6 +152,7 @@ public class OrientationService extends Service {
         }
 
         mNotificationManager.cancel(SERVICE_NOTIFICATION_ID);
+        sCheckingIsRunning = false;
     }
 
 

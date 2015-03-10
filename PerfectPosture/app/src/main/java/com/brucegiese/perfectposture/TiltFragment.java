@@ -43,10 +43,11 @@ public class TiltFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (savedInstanceState != null) {
-            // TODO: this could actually be wrong if we start the app while the service is running
-            mButtonState = savedInstanceState.getBoolean(SAVED_BUTTON_STATE, false);
-        }
+        mButtonState = OrientationService.sCheckingIsRunning;
+
+//        if (savedInstanceState != null) {
+//            mButtonState = savedInstanceState.getBoolean(SAVED_BUTTON_STATE, OrientationService.sCheckingIsRunning);
+//        }
 
         if( mOrientationService == null ) {
             mOrientationService = new OrientationService();
