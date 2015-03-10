@@ -1,9 +1,13 @@
 package com.brucegiese.perfectposture;
 
 import android.app.IntentService;
+import android.app.Service;
 import android.content.Intent;
 import android.content.Context;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
 import android.util.Log;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -16,52 +20,25 @@ import java.util.concurrent.TimeUnit;
  * It keeps track of metrics which can be fetched.  It allows for changing the various
  * configuration parameters while the service is running.
  */
-public class OrientationService extends IntentService {
+public class OrientationService extends Service {
     private static final String TAG = "com.brucegiese.service";
+    public static final int MSG_START_MONITORING = 1;
+    public static final int MSG_STOP_MONITORING = 2;
+    public static final int MSG_DO_NOTHING = 3;
+
     private static final int DEFAULT_UPDATE_INTERVAL = 1;    // units of seconds
     private static final int DEFAULT_Z_AXIS_THRESHOLD = 4;
+
     private Orientation mOrientation = null;
     private ScheduledExecutorService mScheduler;
     private ScheduledFuture mScheduledFuture;
+
     private int mUpdateInterval = DEFAULT_UPDATE_INTERVAL;
     private int mZAxisThreshold = DEFAULT_Z_AXIS_THRESHOLD;
     private int mPercentBadPosture;      // 0 to 100
 
-    /*
-    *   This uses the recommended method for implementing an IntentService.  A lot of the
-    *   extra code comes from having to receive requests from the application and then
-    *   sending that same information down to the background thread.  Fortunately, you
-    *   can ignore most of this stuff and focus on the public methods below.
-     */
+    private int debugCounter = 0;
 
-    // Start the service (if it's not already started)
-    private static final String ACTION_START = "com.brucegiese.perfectposture.action.START";
-    // Stop the service
-    private static final String ACTION_STOP = "com.brucegiese.perfectposture.action.STOP";
-    // Get history, metrics, etc.
-    private static final String ACTION_GET = "com.brucegiese.perfectposture.action.GET";
-    // Set parameters
-    private static final String ACTION_SET_PARAMS = "com.brucegiese.perfectposture.action.SET_PARAMS";
-
-    private static final String EXTRA_UPDATE_INTERVAL
-            = "com.brucegiese.perfectposture.extra.UPDATE_INTERVAL";
-    private static final String EXTRA_Z_AXIS_THRESHOLD
-            = "com.brucegiese.perfectposture.extra.Z_AXIS_THRESHOLD";
-
-
-    // Broadcast receivers must create an Intent filter with this Action name to receive the results
-    public static final String GET_ALL_RESULTS
-            = "com.brucegiese.perfectposture.BROADCAST_TYPE_GET_ALL_RESULTS";
-    // This is one of the results sent back to the broadcast receiver. % of overall time.
-    public static final String PERCENT_BAD_POSTURE
-            = "com.brucegiese.perfectposture.PERCENT_BAD_POSTURE";
-
-
-
-    public OrientationService() {
-        super("OrientationService");
-        Log.d(TAG, "OrientationService created");
-    }
 
 
     @Override
@@ -82,11 +59,46 @@ public class OrientationService extends IntentService {
     }
 
 
+    /**
+     * Handler of incoming messages from different instantiations of the application
+     */
+    class IncomingHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            switch( msg.what ) {
+
+                case MSG_START_MONITORING:
+                    Log.d(TAG, "got message: MSG_START_MONITORING");
+                    startChecking();
+                    break;
+
+                case MSG_STOP_MONITORING:
+                    Log.d(TAG, "got message: MSG_STOP_MONITORING");
+                    stopChecking();
+                    break;
+
+                default:
+                    super.handleMessage(msg);
+            }
+        }
+    }
+
+    /**
+     * Target we publish for the client to send messages to IncomingHandler
+     */
+    public final Messenger mMessenger = new Messenger( new IncomingHandler());
+
+    /**
+     * When binding to the service, we return an interface to our messenger for sending
+     * messsages to the service
+     */
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: need to support stopping the service here.  Also getting results.
-        return null;
+        Log.d(TAG, "onBind called");
+        return mMessenger.getBinder();
     }
+
+
 
     @Override
     public void onDestroy() {
@@ -101,141 +113,55 @@ public class OrientationService extends IntentService {
             mScheduledFuture = null;
         }
         if( mOrientation != null ) {
-            Log.d(TAG, "...mOrientation was not null");
             mOrientation.stopOrienting();
             mOrientation = null;
+        } else {
+            Log.e(TAG, "mOrientation was null in onDestroy().  That should never happen.");
         }
     }
 
 
 
     /**
-     * Start the background service running.  It will continue running after the app terminates.
-     * This will immediately send out a notification showing the service is running.  If the
-     * user clicks on the notification, it will re-open the application allowing the user to
-     * stop the service, if desired.
-     *
-     * This service also sends another notification if they are holding the device outside
-     * the range of allowed orientation.
-     *
-     * @param context
+     *  For robustness purposes, this should be able to handle being called
+     *  when the checking is already running.  Worst case, the results get reset.
      */
-    public static void startChecking(Context context) {
-        Log.d(TAG, "OrientationService startChecking() called");
+    private void startChecking() {
+        try {
+            mPercentBadPosture = 0;
+            mOrientation.startOrienting();
 
-        Intent intent = new Intent(context, OrientationService.class);
-        intent.setAction(ACTION_START);
-        context.startService(intent);
-    }
+            if (mScheduledFuture == null) {
+                // We use an additional thread for the periodic execution task.
 
-    /**
-     * Stop the background service running.  There must always be a way for the user to call this!
-     * @param context
-     */
-    public static void stopChecking(Context context) {
-        Log.d(TAG, "OrientationService stopChecking() called");
-        Intent intent = new Intent(context, OrientationService.class);
-        intent.setAction(ACTION_STOP);
-        context.startService(intent);
-    }
-
-    /**
-     * Get any results and metrics back from the service sent to a broadcast receiver.
-     *
-      * @param context
-     */
-    public static void getResults(Context context) {
-        Intent intent = new Intent(context, OrientationService.class);
-        intent.setAction(ACTION_GET);
-        context.startService(intent);
-    }
-
-    /**
-     * Set the configurable parameters while the service is running.
-     *
-     * @param context
-     * @param updateInterval    How often to process the data that's streaming in.
-     * @param zAxisThreshold    How much tilt is allowed before we complain to the user
-     */
-    public static void setParams(Context context, int updateInterval, int zAxisThreshold) {
-        Intent intent = new Intent(context, OrientationService.class);
-        intent.setAction(ACTION_START);
-        intent.putExtra(EXTRA_UPDATE_INTERVAL, updateInterval);
-        intent.putExtra(EXTRA_Z_AXIS_THRESHOLD, zAxisThreshold);
-        context.startService(intent);
-    }
-
-
-
-    /*
-    *       The stuff below runs on a background thread
-     */
-
-    @Override
-    protected void onHandleIntent(Intent intent) {
-        if (intent != null) {
-            final String action = intent.getAction();
-            if (ACTION_START.equals(action)) {
-                handleStartChecking();
-            } else if (ACTION_STOP.equals(action)) {
-                handleStopChecking();
-            } else if (ACTION_GET.equals(action)) {
-                handleGetResults();
-            } else if (ACTION_SET_PARAMS.equals(action)) {
-                final int updateInterval =
-                        intent.getIntExtra(EXTRA_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL);
-                final int zAxisThreshold =
-                        intent.getIntExtra(EXTRA_Z_AXIS_THRESHOLD, DEFAULT_Z_AXIS_THRESHOLD);
-                handleSetParams(updateInterval, zAxisThreshold);
+                mScheduler = Executors.newScheduledThreadPool(1);
+                mScheduledFuture =
+                        mScheduler.scheduleAtFixedRate(
+                                mDoPeriodicWork,
+                                mUpdateInterval,
+                                mUpdateInterval,
+                                TimeUnit.SECONDS);
+            } else {
+                Log.i(TAG, "startChecking() was called when checking was already running");
             }
+        } catch (Exception e) {
+            Log.e(TAG, "Exception when starting orientation and scheduler: ", e);
         }
     }
 
-    private void handleStartChecking() {
-        Log.d(TAG, "background service thread handleStartChecking()");
-        mPercentBadPosture = 0;
-        mOrientation.startOrienting();
-
-        // We use an additional thread for the periodic execution task.
-        mScheduler = Executors.newScheduledThreadPool(1);
-        mScheduledFuture =
-                mScheduler.scheduleAtFixedRate(
-                        mDoPeriodicWork,
-                        mUpdateInterval,
-                        mUpdateInterval,
-                        TimeUnit.SECONDS);
+    /**
+     *  For robustness purposes, this should be able to handle being called
+     *  when the checking has already been stopped.
+     */
+    private void stopChecking() {
+        if( mScheduledFuture != null) {
+            mScheduledFuture.cancel(true);
+            mScheduledFuture = null;
+            mOrientation.stopOrienting();
+        } else {
+            Log.i(TAG, "stopChecking() was called when checking wasn't running.");
+        }
     }
-
-    private void handleStopChecking() {
-        Log.d(TAG, "background service thread handleStopChecking()");
-
-        mScheduledFuture.cancel(true);
-        mScheduledFuture = null;
-        mOrientation.stopOrienting();
-        mOrientation = null;
-        stopSelf();
-
-    }
-
-    private void handleSetParams(int updateInterval, int zAxisThreshold) {
-        Log.d(TAG, "background service thread handleSetParams");
-
-        mUpdateInterval = updateInterval;
-        mZAxisThreshold = zAxisThreshold;
-    }
-
-    private void handleGetResults() {
-        // TODO:  https://guides.codepath.com/android/Starting-Background-Services
-        // This guide shows the best way to do this.
-
-        Log.d(TAG, "background service thread handleGetResults");
-        Intent intent = new Intent();
-        intent.setAction(GET_ALL_RESULTS);
-
-        intent.putExtra(PERCENT_BAD_POSTURE, mPercentBadPosture);
-        sendBroadcast(intent);
-    }
-
 
 
 
@@ -252,12 +178,15 @@ public class OrientationService extends IntentService {
             int z = mOrientation.getZ();
 
             Log.d(TAG, "x=" + x + ", y=" + y + ", z=" + z);
+
+            // TODO: REMOVE THIS: this stops the service after 15 seconds so we don't get stuck.
+            if( debugCounter++ > 15) {
+                debugCounter = 0;
+                Log.d(TAG, "STOPPING THE SERVICE due to the debugCounter");
+                stopChecking();
+            }
         }
     };
-
-
-
-
 
 
 }

@@ -15,5 +15,6 @@
     <string name="stop_tilt_detection">Stop Tilt Detection</string>
     <string name="no_gravity_sensor">No gravity sensor was detected, sorry.</string>
     <string name="no_data">---</string>
+    <string name="no_service">Gravity service is not currently available</string>
 
 </resources>
