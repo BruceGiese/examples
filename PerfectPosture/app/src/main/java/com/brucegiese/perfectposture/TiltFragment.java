@@ -46,9 +46,10 @@ public class TiltFragment extends Fragment {
             mOrientationService = new OrientationService();
             Intent intent = new Intent(getActivity(), OrientationService.class);
             getActivity().startService(intent);     // make it persistent by calling this first
-            getActivity().bindService(new Intent(getActivity(),
-                    OrientationService.class), mConnection, getActivity().BIND_AUTO_CREATE);
         }
+        // We need to bind to the service on every onCreate() call since we unbind in onDestroy()
+        getActivity().bindService(new Intent(getActivity(),
+                OrientationService.class), mConnection, getActivity().BIND_AUTO_CREATE);
 
     }
 
