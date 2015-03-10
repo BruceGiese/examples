@@ -98,7 +98,6 @@ public class TiltFragment extends Fragment {
         if( mBound ) {
             Log.d(TAG, "unbinding from the service");
             getActivity().unbindService(mConnection);
-            Log.d(TAG, "done unbinding");
         }
         // We leave the service running, but we unbind from it.
         // TODO: If we start/stop the app, do we get multiple instances of the service object?
