@@ -48,6 +48,10 @@ public class OrientationService extends Service {
     private static final String SERVICE_NOTIFICATION_TITLE = "serviceNotification";
     private static final String POSTURE_NOTIFICATION_TITLE = "postureNotification";
     private NotificationManager mNotificationManager;
+    private enum NotificationType {
+        SERVICE_RUNNING,
+        BAD_POSTURE
+    }
 
     private int debugCounter = 0;
 
@@ -165,16 +169,7 @@ public class OrientationService extends Service {
                                 mUpdateInterval,
                                 TimeUnit.SECONDS);
 
-                Intent resultIntent = new Intent(this, PerfectPostureActivity.class);
-                PendingIntent pIntent = PendingIntent.getActivity(this, 0, resultIntent, 0);
-                NotificationCompat.Builder mBuilder =
-                        new NotificationCompat.Builder(this)
-                                .setSmallIcon(R.drawable.ic_posture)
-                                .setContentIntent(pIntent)
-                                .setContentTitle(SERVICE_NOTIFICATION_TITLE)
-                                .setContentText(getResources().getString(R.string.service_notification_text));
-                mNotificationManager.notify(SERVICE_NOTIFICATION_ID, mBuilder.build());
-                // TODO: add TaskStackBuilder if API is > min
+                sendNotification(NotificationType.SERVICE_RUNNING, true);
 
             } else {
                 Log.i(TAG, "startChecking() was called when checking was already running");
@@ -246,16 +241,7 @@ public class OrientationService extends Service {
             Log.d(TAG, "no vibrate on this device");
         }
 
-        Intent resultIntent = new Intent(this, PerfectPostureActivity.class);
-        PendingIntent pIntent = PendingIntent.getActivity(
-                this, 0, resultIntent, PendingIntent.FLAG_CANCEL_CURRENT);
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(this)
-                        .setSmallIcon(R.drawable.ic_posture_alert)
-                        .setContentIntent(pIntent)
-                        .setContentTitle(POSTURE_NOTIFICATION_TITLE)
-                        .setContentText(getResources().getString(R.string.posture_notification_text));
-        mNotificationManager.notify(SERVICE_NOTIFICATION_ID, mBuilder.build());
+        sendNotification(NotificationType.BAD_POSTURE, true);
     }
 
     /**
@@ -270,24 +256,56 @@ public class OrientationService extends Service {
             Log.d(TAG, "no vibrate on this device");
         }
 
-        Intent resultIntent = new Intent(this, PerfectPostureActivity.class);
-        PendingIntent pIntent = PendingIntent.getActivity(this, 0, resultIntent, 0);
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(this)
-                        .setSmallIcon(R.drawable.ic_posture)
-                        .setContentIntent(pIntent)
-                        .setContentTitle(SERVICE_NOTIFICATION_TITLE)
-                        .setContentText(getResources().getString(R.string.service_notification_text));
-        mNotificationManager.notify(SERVICE_NOTIFICATION_ID, mBuilder.build());
-    }
+        sendNotification(NotificationType.BAD_POSTURE, false);
 
+    }
 
     /**
-     * @hide
-     * This resets the measurement results
+     * Send or cancel a notification
+     * @param n The type of notification to send or cancel
+     * @param send  true if send, false if cancel
      */
-    private void resetResults() {
+    private void sendNotification(NotificationType n, boolean send) {
+        String title;
+        String text;
+        int id;
+        int icon;
 
+        switch( n ) {
+
+            case SERVICE_RUNNING:
+                title = SERVICE_NOTIFICATION_TITLE;
+                text = getResources().getString(R.string.service_notification_text);
+                id = SERVICE_NOTIFICATION_ID;
+                icon = R.drawable.ic_posture;
+                break;
+
+
+            case BAD_POSTURE:
+                title = POSTURE_NOTIFICATION_TITLE;
+                text = getResources().getString(R.string.posture_notification_text);
+                id = POSTURE_NOTIFICATION_ID;
+                icon = R.drawable.ic_posture_alert;
+                break;
+
+            default:
+                Log.e(TAG, "Unknown type given to sendNotification");
+                return;
+
+        }
+
+        if( send ) {
+            Intent resultIntent = new Intent(this, PerfectPostureActivity.class);
+            PendingIntent pIntent = PendingIntent.getActivity(this, 0, resultIntent, 0);
+            NotificationCompat.Builder mBuilder =
+                    new NotificationCompat.Builder(this)
+                            .setSmallIcon(icon)
+                            .setContentIntent(pIntent)
+                            .setContentTitle(title)
+                            .setContentText(text);
+            mNotificationManager.notify(id, mBuilder.build());
+        } else {
+            mNotificationManager.cancel(id);
+        }
     }
-
 }
