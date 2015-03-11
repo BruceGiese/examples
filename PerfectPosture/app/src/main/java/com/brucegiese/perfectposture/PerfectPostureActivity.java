@@ -41,8 +41,7 @@ public class PerfectPostureActivity extends ActionBarActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // TODO: add a setting for changing the update interval.
-        // TODO: add settings for ranges of good posture.
+
         int id = item.getItemId();
         if (id == R.id.action_settings) {
             return true;

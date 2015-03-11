@@ -3,18 +3,14 @@
 
     <string name="app_name">PerfectPosture</string>
     <string name="action_settings">Settings</string>
-    <string name="axis_empty_string">---</string>
-    <string name="x_axis_label">X-axis</string>
-    <string name="y_axis_label">Y-axis</string>
-    <string name="z_axis_label">Z-axis</string>
-    <string name="temperature_label">Ambient Temperature</string>
-    <string name="temperature_f">degrees F</string>
-    <string name="percent_h">%</string>
-    <string name="humidity_label">Humidity</string>
-    <string name="start_tilt_detection">Start Tilt Detection</string>
-    <string name="stop_tilt_detection">Stop Tilt Detection</string>
+    <string name="vibrate_setting">Vibrate Alerts</string>
+    <string name="notification_setting">Notification Alerts</string>
+    <string name="led_setting">LED Alerts</string>
+    <string name="reset_posture_data">Reset Posture Data</string>
+
+    <string name="start_tilt_detection">Start Posture Detection</string>
+    <string name="stop_tilt_detection">Stop Posture Detection</string>
     <string name="no_gravity_sensor">No gravity sensor was detected, sorry.</string>
-    <string name="no_data">---</string>
     <string name="no_service">Gravity service is not currently available</string>
     <string name="service_notification_text">PerfectPosture service is running</string>
     <string name="posture_notification_text">Hold the phone more vertically</string>

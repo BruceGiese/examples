@@ -3,6 +3,10 @@ package com.brucegiese.perfectposture;
 
 import android.util.Log;
 
+        // TODO: Serialize this to JSON and write it out to (and read it from) external storage.
+/**
+ * This class represents the data collected about the user's posture.
+ */
 public class PostureResults {
     private static final String TAG = "com.brucegiese.postureresults";
     private static final int DEFAULT_BAD_THRESHOLD = 4;
