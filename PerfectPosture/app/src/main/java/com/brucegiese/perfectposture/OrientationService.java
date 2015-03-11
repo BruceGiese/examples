@@ -192,6 +192,8 @@ public class OrientationService extends Service {
      *  when the checking has already been stopped.
      */
     private void stopChecking() {
+        sendNotification(NotificationType.BAD_POSTURE, false);
+        sendNotification(NotificationType.SERVICE_RUNNING, false);
         if( mScheduledFuture != null) {
             mScheduledFuture.cancel(true);
             mScheduledFuture = null;
