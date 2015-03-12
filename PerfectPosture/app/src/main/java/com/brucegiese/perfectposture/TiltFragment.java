@@ -1,13 +1,16 @@
 package com.brucegiese.perfectposture;
 
+import android.app.Fragment;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
-import android.support.v4.app.Fragment;
+import android.preference.Preference;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -78,6 +81,12 @@ public class TiltFragment extends Fragment {
     }
 
     @Override
+    public void onPause() {
+        super.onPause();
+
+    }
+
+    @Override
     public void onDestroyView() {
         super.onDestroyView();
         mView = null;
@@ -119,29 +128,11 @@ public class TiltFragment extends Fragment {
     *
      */
     private void startOrientation() {
-        if( ! mServiceConnected ) {
-            Log.e(TAG, "We never got the service running or never got connected to it: ");
-        } else {
-            Message msg = Message.obtain(null, OrientationService.MSG_START_MONITORING, 0, 0);
-            try {
-                mService.send(msg);
-            } catch (Exception e) {
-                Log.e(TAG, "Exception trying to send message to start orienting: ", e);
-            }
-        }
+        sendMessage(OrientationService.MSG_START_MONITORING);
     }
 
     private void stopOrientation() {
-        if( ! mServiceConnected ) {
-            Log.e(TAG, "Service was not already running when we went to stop it");
-        } else {
-            Message msg = Message.obtain(null, OrientationService.MSG_STOP_MONITORING, 0, 0);
-            try {
-                mService.send(msg);
-            } catch( Exception e) {
-                Log.e(TAG, "Exception trying to send message to stop orienting: ", e);
-            }
-        }
+        sendMessage(OrientationService.MSG_STOP_MONITORING);
     }
 
 
@@ -166,4 +157,27 @@ public class TiltFragment extends Fragment {
             mServiceConnected = false;
         }
     };
+
+
+    private void sendMessage(int message) { sendMessage(message, 0, 0); }
+    private void sendMessage(int message, int arg1) { sendMessage(message, arg1, 0); }
+    /**
+     *
+     * @param message
+     * @param arg1 optional integer argument as part of normal messages
+     * @param arg2 optional integer argument as part of normal messages
+     */
+    private void sendMessage(int message, int arg1, int arg2) {
+        if (!mServiceConnected) {
+            Log.e(TAG, "Service was not already running when we tried to send message " + message);
+        } else {
+            Message msg = Message.obtain(null, message, arg1, arg2);
+            try {
+                mService.send(msg);
+            } catch (Exception e) {
+                Log.e(TAG, "Exception trying to send message " + message, e);
+            }
+        }
+    }
+
 }

@@ -9,7 +9,7 @@
     <string name="pref_notification">Notification Alerts</string>
     <string name="pref_notification_summ">Send notification icons to the top of the screen to alert bad posture</string>
     <string name="pref_led">LED Alerts</string>
-    <string name="pref_led_summ">Turn on/off LED to alert bad posture</string>
+    <string name="pref_led_summ">Turn on/off LED to alert bad posture (not implemented yet)</string>
     <string name="reset_posture_data">Reset Posture Data</string>
 
     <string name="start_tilt_detection">Start Posture Detection</string>

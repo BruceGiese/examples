@@ -5,12 +5,15 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.Vibrator;
+import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.util.ArrayMap;
 import android.util.Log;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,6 +31,12 @@ public class OrientationService extends Service {
     private static boolean sIsRunning = false;
     public static OrientationService sInstance = null;
 
+    /** Warning: These strings MUST match up with the strings in preferences.xml */
+    public static final String PREF_NOTIFICATION = "pref_notifications";
+    public static final String PREF_VIBRATE = "pref_vibrate";
+    public static final String PREF_LED = "pref_led";
+    public static final boolean DEFAULT_CHECKBOX = true;    // default for checkboxes is true
+
     public static final int MSG_START_MONITORING = 1;
     public static final int MSG_STOP_MONITORING = 2;
 
@@ -44,8 +53,15 @@ public class OrientationService extends Service {
     private int mZAxisNegThreshold = DEFAULT_Z_AXIS_NEG_THRESHOLD;
     private PostureResults mResults = null;
 
+    // Configuration settings sent from main activity.
+    private boolean mAlertNotification = DEFAULT_CHECKBOX;
+    private boolean mAlertVibration = DEFAULT_CHECKBOX;
+    private boolean mAlertLed = DEFAULT_CHECKBOX;
+    private SharedPreferences mPrefs;
+
     private Vibrator mVibrator = null;
-    private int VIBRATION_TIME = 200;        // units of milliseconds
+    private int BAD_POSTURE_VIBRATION_TIME = 800;        // units of milliseconds
+    private int GOOD_POSTURE_VIBRATION_TIME = 30;        // units of milliseconds
     private static final int SERVICE_NOTIFICATION_ID = 1;
     private static final int POSTURE_NOTIFICATION_ID = 2;
     private static final String SERVICE_NOTIFICATION_TITLE = "serviceNotification";
@@ -90,7 +106,12 @@ public class OrientationService extends Service {
         }
 
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        loadSharedPreferences();        // read the existing shared preferences
+        mPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        mPrefs.registerOnSharedPreferenceChangeListener(prefListener);      // listen for changes
     }
+
 
     // Documentation says don't Override onStartCommand().  If you do, make sure to
     // return super.onStartCommand() with the same args.
@@ -110,12 +131,12 @@ public class OrientationService extends Service {
             switch( msg.what ) {
 
                 case MSG_START_MONITORING:
-                    Log.d(TAG, "handleMessage() called: Start monitoring");
+                    Log.d(TAG, "handleMessage(): Start monitoring");
                     startChecking();
                     break;
 
                 case MSG_STOP_MONITORING:
-                    Log.d(TAG, "handleMessage() called: Stop monitoring");
+                    Log.d(TAG, "handleMessage(): Stop monitoring");
                     stopChecking();
                     break;
 
@@ -247,11 +268,7 @@ public class OrientationService extends Service {
      */
     private void badPostureAlerts() {
         Log.d(TAG, "Posture is bad!");
-        if( mVibrator != null) {
-            mVibrator.vibrate(800);
-
-        }
-
+        vibrate(true);
         sendNotification(NotificationType.BAD_POSTURE, true);
     }
 
@@ -260,16 +277,14 @@ public class OrientationService extends Service {
      */
     private void goodPostureAlerts() {
         Log.d(TAG, "Posture just got good!");
-        if( mVibrator != null) {
-            mVibrator.vibrate(30);
-        }
-
+        vibrate(false);
         sendNotification(NotificationType.BAD_POSTURE, false);
 
     }
 
     /**
-     * Send or cancel a notification
+     * Send or cancel a notification, subject to user settings
+     *
      * @param n The type of notification to send or cancel
      * @param send  true if send, false if cancel
      */
@@ -279,41 +294,100 @@ public class OrientationService extends Service {
         int id;
         int icon;
 
-        switch( n ) {
+        if( mAlertNotification || !send ) {      // always attempt to cancel pending notifications
+            switch (n) {
 
-            case SERVICE_RUNNING:
-                title = SERVICE_NOTIFICATION_TITLE;
-                text = getResources().getString(R.string.service_notification_text);
-                id = SERVICE_NOTIFICATION_ID;
-                icon = R.drawable.ic_posture;
-                break;
+                case SERVICE_RUNNING:
+                    title = SERVICE_NOTIFICATION_TITLE;
+                    text = getResources().getString(R.string.service_notification_text);
+                    id = SERVICE_NOTIFICATION_ID;
+                    icon = R.drawable.ic_posture;
+                    break;
 
 
-            case BAD_POSTURE:
-                title = POSTURE_NOTIFICATION_TITLE;
-                text = getResources().getString(R.string.posture_notification_text);
-                id = POSTURE_NOTIFICATION_ID;
-                icon = R.drawable.ic_posture_alert;
-                break;
+                case BAD_POSTURE:
+                    title = POSTURE_NOTIFICATION_TITLE;
+                    text = getResources().getString(R.string.posture_notification_text);
+                    id = POSTURE_NOTIFICATION_ID;
+                    icon = R.drawable.ic_posture_alert;
+                    break;
 
-            default:
-                Log.e(TAG, "Unknown type given to sendNotification");
-                return;
+                default:
+                    Log.e(TAG, "Unknown type given to sendNotification");
+                    return;
 
+            }
+
+            if (send) {
+                Intent resultIntent = new Intent(this, PerfectPostureActivity.class);
+                PendingIntent pIntent = PendingIntent.getActivity(this, 0, resultIntent, 0);
+                NotificationCompat.Builder mBuilder =
+                        new NotificationCompat.Builder(this)
+                                .setSmallIcon(icon)
+                                .setContentIntent(pIntent)
+                                .setContentTitle(title)
+                                .setContentText(text);
+                mNotificationManager.notify(id, mBuilder.build());
+            } else {
+                mNotificationManager.cancel(id);
+            }
         }
+    }
 
-        if( send ) {
-            Intent resultIntent = new Intent(this, PerfectPostureActivity.class);
-            PendingIntent pIntent = PendingIntent.getActivity(this, 0, resultIntent, 0);
-            NotificationCompat.Builder mBuilder =
-                    new NotificationCompat.Builder(this)
-                            .setSmallIcon(icon)
-                            .setContentIntent(pIntent)
-                            .setContentTitle(title)
-                            .setContentText(text);
-            mNotificationManager.notify(id, mBuilder.build());
-        } else {
-            mNotificationManager.cancel(id);
+    /**
+     * Vibrate the device to signal a good or bad posture, subject to user config settings.
+     *
+     * @param badPosture if true, this is a bad posture signal.  False sends a good posture signal.
+     */
+    private void vibrate( boolean badPosture ) {
+        Log.d(TAG,"vibrate: mAlertVibration = " + mAlertVibration);
+        if( mAlertVibration ) {
+            int vibrationTime = GOOD_POSTURE_VIBRATION_TIME;
+            if (badPosture) {
+                vibrationTime = BAD_POSTURE_VIBRATION_TIME;
+            }
+
+            if (mVibrator != null) {
+                mVibrator.vibrate(vibrationTime);
+            }
         }
+    }
+
+
+    /**
+     * Listen for changes in the application's shared preferences.
+     *
+     * This is the recommended way of implementing the listener for changes in shared preferences
+     * Otherwise, the OS will garbage collect the listener.  This creates a strong reference.
+     */
+    SharedPreferences.OnSharedPreferenceChangeListener prefListener =
+            new SharedPreferences.OnSharedPreferenceChangeListener() {
+                public void onSharedPreferenceChanged(SharedPreferences prefs,
+                                                      String key) {
+                    setupPreference(key);
+                }
+            };
+
+    private void setupPreference(String key) {
+        SharedPreferences sharedPrefs =
+                PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        if( key.equals(PREF_NOTIFICATION) ) {
+            mAlertNotification = sharedPrefs.getBoolean(PREF_NOTIFICATION, DEFAULT_CHECKBOX);
+        } else if( key.equals(PREF_VIBRATE) ) {
+            mAlertVibration = sharedPrefs.getBoolean(PREF_VIBRATE, DEFAULT_CHECKBOX);
+        } else if( key.equals(PREF_LED ) ) {
+            mAlertLed = sharedPrefs.getBoolean(PREF_LED, DEFAULT_CHECKBOX);
+        }
+    }
+
+    /**
+     * Read in the various configuration settings via the shared preferences.
+     */
+    private void loadSharedPreferences() {
+        // the getAll() method isn't going to work with the support library ArrayMap.
+        // so just grab each value one-by-one.
+        setupPreference(PREF_NOTIFICATION);
+        setupPreference(PREF_VIBRATE);
+        setupPreference(PREF_LED);
     }
 }

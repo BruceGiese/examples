@@ -1,8 +1,10 @@
 package com.brucegiese.perfectposture;
 
+import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -16,18 +18,23 @@ import android.view.MenuItem;
  * run as a service, define acceptable ranges for posture, and alert the user
  * to bad posture and maybe consistently good posture.
  */
-public class PerfectPostureActivity extends FragmentActivity {
+public class PerfectPostureActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_perfect_posture);
 
-        android.support.v4.app.FragmentManager fsm = getSupportFragmentManager();
-        android.support.v4.app.Fragment f = fsm.findFragmentById(R.id.fragment_container);
+        FragmentManager fm = getFragmentManager();
+        Fragment f = fm.findFragmentById(R.id.fragment_container);
         if( f == null ) {
             TiltFragment tiltFragment = new TiltFragment();
-            fsm.beginTransaction().add(R.id.fragment_container, tiltFragment).commit();
+            fm.beginTransaction().add(R.id.fragment_container, tiltFragment).commit();
+        }
+        Fragment fs = fm.findFragmentById(R.id.pref_container);
+        if( fs == null ) {
+            SettingsFragment settingsFragment = new SettingsFragment();
+            fm.beginTransaction().add(R.id.pref_container, settingsFragment).commit();
         }
     }
 
@@ -42,8 +49,6 @@ public class PerfectPostureActivity extends FragmentActivity {
 
         int id = item.getItemId();
         if (id == R.id.action_settings) {
-            Intent intent = new Intent(this, SettingsActivity.class);
-            startActivity(intent);
             return true;
         }
         return super.onOptionsItemSelected(item);
