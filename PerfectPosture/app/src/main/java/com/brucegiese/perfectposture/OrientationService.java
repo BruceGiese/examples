@@ -25,10 +25,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class OrientationService extends Service {
     private static final String TAG = "com.brucegiese.service";
-
-    // This is dangerous because it can be abused and cause race conditions.  We need this
-    // global status in order for the activity to detect if the service is running or not.
-    public static boolean sCheckingIsRunning = false;
+    private static boolean sIsRunning = false;
 
     public static final int MSG_START_MONITORING = 1;
     public static final int MSG_STOP_MONITORING = 2;
@@ -57,8 +54,17 @@ public class OrientationService extends Service {
         SERVICE_RUNNING,
         BAD_POSTURE
     }
-
     private int debugCounter = 0;
+
+
+    /**
+     * Is the service running right now?  We need to effectively create a singleton object
+     * with the service.
+     * @return true if the service is running
+     */
+    public static boolean checkIsRunning() {
+        return sIsRunning;
+    }
 
 
 
@@ -99,14 +105,12 @@ public class OrientationService extends Service {
 
                 case MSG_START_MONITORING:
                     Log.d(TAG, "got message: MSG_START_MONITORING");
-                    sCheckingIsRunning = true;
                     startChecking();
                     break;
 
                 case MSG_STOP_MONITORING:
                     Log.d(TAG, "got message: MSG_STOP_MONITORING");
                     stopChecking();
-                    sCheckingIsRunning = false;
                     break;
 
                 default:
@@ -122,7 +126,7 @@ public class OrientationService extends Service {
 
     /**
      * When binding to the service, we return an interface to our messenger for sending
-     * messsages to the service
+     * messages to the service
      */
     @Override
     public IBinder onBind(Intent intent) {
@@ -152,7 +156,8 @@ public class OrientationService extends Service {
         }
 
         mNotificationManager.cancel(SERVICE_NOTIFICATION_ID);
-        sCheckingIsRunning = false;
+        // This object is a de-facto singleton
+        OrientationService.sIsRunning = false;
     }
 
 
@@ -165,6 +170,8 @@ public class OrientationService extends Service {
         try {
             mOrientation.startOrienting();
             debugCounter = 0;
+            // This object is essentially a singleton
+            OrientationService.sIsRunning = true;
 
             if (mScheduledFuture == null) {
                 // We use an additional thread for the periodic execution task.
@@ -194,6 +201,8 @@ public class OrientationService extends Service {
     private void stopChecking() {
         sendNotification(NotificationType.BAD_POSTURE, false);
         sendNotification(NotificationType.SERVICE_RUNNING, false);
+        // This object is essentially a singleton
+        OrientationService.sIsRunning = false;
         if( mScheduledFuture != null) {
             mScheduledFuture.cancel(true);
             mScheduledFuture = null;
@@ -202,7 +211,6 @@ public class OrientationService extends Service {
             Log.i(TAG, "stopChecking() was called when checking wasn't running.");
         }
     }
-
 
 
     /**
@@ -223,17 +231,9 @@ public class OrientationService extends Service {
                     badPostureAlerts();
                 }
             } else {
-                if( mResults.recordGoodSample() ) {
+                if (mResults.recordGoodSample()) {
                     goodPostureAlerts();
                 }
-            }
-
-
-            // TODO: REMOVE THIS: this stops the service after 5 minutes so we don't get stuck.
-            if( debugCounter++ > 300) {
-                debugCounter = 0;
-                Log.d(TAG, "STOPPING THE SERVICE due to the debugCounter");
-                stopChecking();
             }
         }
     };

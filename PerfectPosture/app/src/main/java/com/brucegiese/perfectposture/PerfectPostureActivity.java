@@ -1,9 +1,8 @@
 package com.brucegiese.perfectposture;
 
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v7.app.ActionBarActivity;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -17,19 +16,18 @@ import android.view.MenuItem;
  * run as a service, define acceptable ranges for posture, and alert the user
  * to bad posture and maybe consistently good posture.
  */
-public class PerfectPostureActivity extends ActionBarActivity {
+public class PerfectPostureActivity extends FragmentActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_perfect_posture);
 
-        FragmentManager fm = getSupportFragmentManager();
-        Fragment f = fm.findFragmentById(R.id.fragment_container);
-
+        android.support.v4.app.FragmentManager fsm = getSupportFragmentManager();
+        android.support.v4.app.Fragment f = fsm.findFragmentById(R.id.fragment_container);
         if( f == null ) {
             TiltFragment tiltFragment = new TiltFragment();
-            fm.beginTransaction().add(R.id.fragment_container, tiltFragment).commit();
+            fsm.beginTransaction().add(R.id.fragment_container, tiltFragment).commit();
         }
     }
 
@@ -44,6 +42,8 @@ public class PerfectPostureActivity extends ActionBarActivity {
 
         int id = item.getItemId();
         if (id == R.id.action_settings) {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
             return true;
         }
         return super.onOptionsItemSelected(item);
