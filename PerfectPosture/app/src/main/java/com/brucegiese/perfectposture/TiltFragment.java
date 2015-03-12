@@ -23,12 +23,6 @@ public class TiltFragment extends Fragment {
     private boolean mButtonState = false;
     private Messenger mService;         // service for communicating with OrientationService
     private boolean mServiceConnected = false;
-    private static OrientationService sOrientationService;
-
-    static {
-        // We need the service to be essentially a singleton
-        sOrientationService = new OrientationService();
-    }
 
 
     public TiltFragment() { }
@@ -36,13 +30,12 @@ public class TiltFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if( ! sOrientationService.checkIsRunning()) {
-            // We need to start the service before we bind to it so it will be persistent.
-            mServiceConnected = false;      // can't be connected if it's not running
-            Intent intent = new Intent(getActivity(), OrientationService.class);
-            // make it persistent by calling this before attempting to bind
-            getActivity().startService(intent);
-        }
+
+        // The OS treats the service as a singleton and only calls the constructor once
+        // no matter how many times we call startService().
+        Intent intent = new Intent(getActivity(), OrientationService.class);
+        // make it persistent by calling this before attempting to bind
+        getActivity().startService(intent);
         getActivity().bindService(new Intent(getActivity(), OrientationService.class),
                     mConnection, getActivity().BIND_AUTO_CREATE);
     }
@@ -61,13 +54,13 @@ public class TiltFragment extends Fragment {
             public void onClick(View v) {
                 // We're already connected to the service, so send the message now
                 if (mButtonState) {
-                    Log.d(TAG, "onClick(): shutting down");
+                    Log.d(TAG, "onClick(): start monitoring");
                     stopOrientation();
                     ((Button) v).setText(R.string.start_tilt_detection);
                     mButtonState = false;
 
                 } else {
-                    Log.d(TAG, "onClick(): starting up");
+                    Log.d(TAG, "onClick(): stop monitoring");
                     startOrientation();
                     ((Button) v).setText(R.string.stop_tilt_detection);
                     mButtonState = true;
@@ -94,6 +87,13 @@ public class TiltFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        // If the service is not doing orientation, then stop the whole service
+        if( ! OrientationService.sInstance.checkIsRunning()) {
+            Log.d(TAG, "onDestroy(): Stopping the service");
+            Intent intent = new Intent(getActivity(), OrientationService.class);
+            // make it persistent by calling this before attempting to bind
+            getActivity().stopService(intent);
+        }
     }
 
 
@@ -102,7 +102,7 @@ public class TiltFragment extends Fragment {
      * reliable way of keeping track of the service without going into AIDL.
      */
     private void checkAndSetButtonState() {
-        mButtonState = sOrientationService.checkIsRunning();
+        mButtonState = OrientationService.sInstance.checkIsRunning();
         if( mView != null ) {
             Button button = (Button) mView.findViewById(R.id.start_stop_button);
             if( mButtonState ) {
@@ -122,7 +122,6 @@ public class TiltFragment extends Fragment {
         if( ! mServiceConnected ) {
             Log.e(TAG, "We never got the service running or never got connected to it: ");
         } else {
-            Log.d(TAG, "Sending start message");
             Message msg = Message.obtain(null, OrientationService.MSG_START_MONITORING, 0, 0);
             try {
                 mService.send(msg);
@@ -136,7 +135,6 @@ public class TiltFragment extends Fragment {
         if( ! mServiceConnected ) {
             Log.e(TAG, "Service was not already running when we went to stop it");
         } else {
-            Log.d(TAG, "Sending stop message");
             Message msg = Message.obtain(null, OrientationService.MSG_STOP_MONITORING, 0, 0);
             try {
                 mService.send(msg);
@@ -157,7 +155,6 @@ public class TiltFragment extends Fragment {
          * representation of the Messenger from the raw IBinder object
          */
         public void onServiceConnected(ComponentName className, IBinder service) {
-            Log.d(TAG, "Connection established connection with the service");
             mServiceConnected = true;
             mService = new Messenger(service);
         }

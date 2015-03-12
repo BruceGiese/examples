@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 public class OrientationService extends Service {
     private static final String TAG = "com.brucegiese.service";
     private static boolean sIsRunning = false;
+    public static OrientationService sInstance = null;
 
     public static final int MSG_START_MONITORING = 1;
     public static final int MSG_STOP_MONITORING = 2;
@@ -59,19 +60,24 @@ public class OrientationService extends Service {
 
     /**
      * Is the service running right now?  We need to effectively create a singleton object
-     * with the service.
+     * with the service.  The OS cooperates by only calling the constructor once, even if there
+     * are multiple calls to startService().
      * @return true if the service is running
      */
     public static boolean checkIsRunning() {
         return sIsRunning;
     }
 
-
+    public OrientationService() {
+        if( OrientationService.sInstance != null ) {
+            Log.e(TAG, "Our assumption that the OS treats service as a singleton is WRONG!");
+        }
+        OrientationService.sInstance = this;
+    }
 
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "OrientationService onCreate() called");
         if( mOrientation == null) {
             mOrientation = new Orientation(this);
         }
@@ -104,12 +110,12 @@ public class OrientationService extends Service {
             switch( msg.what ) {
 
                 case MSG_START_MONITORING:
-                    Log.d(TAG, "got message: MSG_START_MONITORING");
+                    Log.d(TAG, "handleMessage() called: Start monitoring");
                     startChecking();
                     break;
 
                 case MSG_STOP_MONITORING:
-                    Log.d(TAG, "got message: MSG_STOP_MONITORING");
+                    Log.d(TAG, "handleMessage() called: Stop monitoring");
                     stopChecking();
                     break;
 
@@ -139,16 +145,15 @@ public class OrientationService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "OrientationService onDestroy() called");
-
         // Make absolutely sure that we've stopped everything and cleaned up.
         // This is guaranteed to be the last thing called.
         if( mScheduledFuture != null ) {
-            Log.d(TAG, "...mScheduledFuture was not null");
+            Log.i(TAG, "onDestroy(): mScheduledFuture was not already null");
             mScheduledFuture.cancel(true);
             mScheduledFuture = null;
         }
         if( mOrientation != null ) {
+            // Just to be safe
             mOrientation.stopOrienting();
             mOrientation = null;
         } else {
@@ -158,6 +163,7 @@ public class OrientationService extends Service {
         mNotificationManager.cancel(SERVICE_NOTIFICATION_ID);
         // This object is a de-facto singleton
         OrientationService.sIsRunning = false;
+        OrientationService.sInstance = null;        // The OS will destroy the object now.
     }
 
 
@@ -187,7 +193,7 @@ public class OrientationService extends Service {
                 sendNotification(NotificationType.SERVICE_RUNNING, true);
 
             } else {
-                Log.i(TAG, "startChecking() was called when checking was already running");
+                Log.e(TAG, "startChecking() was called when checking was already running");
             }
         } catch (Exception e) {
             Log.e(TAG, "Exception when starting orientation and scheduler: ", e);
@@ -208,7 +214,7 @@ public class OrientationService extends Service {
             mScheduledFuture = null;
             mOrientation.stopOrienting();
         } else {
-            Log.i(TAG, "stopChecking() was called when checking wasn't running.");
+            Log.e(TAG, "stopChecking() was called when checking wasn't running.");
         }
     }
 
@@ -221,10 +227,8 @@ public class OrientationService extends Service {
     Runnable mDoPeriodicWork = new Runnable() {   // must be executed in the UI thread
         @Override
         public void run() {
-            int x = mOrientation.getX();
-            int y = mOrientation.getY();
             int z = mOrientation.getZ();
-            Log.d(TAG, "x=" + x + ", y=" + y + ", z=" + z);
+            Log.d(TAG, "z=" + z);
 
             if( (z > mZAxisPosThreshold) || (z < -mZAxisNegThreshold)) {
                 if( mResults.recordBadSample() ) {
@@ -244,11 +248,8 @@ public class OrientationService extends Service {
     private void badPostureAlerts() {
         Log.d(TAG, "Posture is bad!");
         if( mVibrator != null) {
-            Log.d(TAG,"vibrate");
             mVibrator.vibrate(800);
 
-        } else {
-            Log.d(TAG, "no vibrate on this device");
         }
 
         sendNotification(NotificationType.BAD_POSTURE, true);
@@ -260,10 +261,7 @@ public class OrientationService extends Service {
     private void goodPostureAlerts() {
         Log.d(TAG, "Posture just got good!");
         if( mVibrator != null) {
-            Log.d(TAG,"vibrate");
             mVibrator.vibrate(30);
-        } else {
-            Log.d(TAG, "no vibrate on this device");
         }
 
         sendNotification(NotificationType.BAD_POSTURE, false);
