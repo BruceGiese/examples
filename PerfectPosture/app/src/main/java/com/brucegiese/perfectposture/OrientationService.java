@@ -1,13 +1,11 @@
 package com.brucegiese.perfectposture;
 
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -16,7 +14,6 @@ import android.os.PowerManager;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.util.ArrayMap;
 import android.util.Log;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -39,24 +36,29 @@ public class OrientationService extends Service {
     private static final String PREF_VIBRATE = "pref_vibrate";
     private static final String PREF_LED = "pref_led";
     private static final boolean DEFAULT_CHECKBOX = true;    // default for checkboxes is true
-    private static final int LED_ON_TIME = 200;              // units of milliseconds
-    private static final int LED_OFF_TIME = 200;
+
+    // Number of consecutive good/bad samples before we declare a change in posture.
+    private static final int POSITIVE_HYSTERESIS = 4;
+    private static final int NEGATIVE_HYSTERESIS = 8;
+    // number of additional consecutive bad posture samples before we issue a reminder
+    private static final int DEFAULT_BAD_REMINDER_THRESHOLD = 10;
+    int mBadPostureReminderCountThreshold = DEFAULT_BAD_REMINDER_THRESHOLD;
 
     public static final int MSG_START_MONITORING = 1;
     public static final int MSG_STOP_MONITORING = 2;
 
     private static final int DEFAULT_UPDATE_INTERVAL = 1;           // units of seconds
-    private static final int DEFAULT_Z_AXIS_POS_THRESHOLD = 20;    // units of degrees
-    private static final int DEFAULT_Z_AXIS_NEG_THRESHOLD = 20;     // units of degrees
 
     private Orientation mOrientation = null;
     private ScheduledExecutorService mScheduler;
     private ScheduledFuture mScheduledFuture;
 
     private int mUpdateInterval = DEFAULT_UPDATE_INTERVAL;
-    private int mZAxisPosThreshold = DEFAULT_Z_AXIS_POS_THRESHOLD;
-    private int mZAxisNegThreshold = DEFAULT_Z_AXIS_NEG_THRESHOLD;
+
     private PostureResults mResults = null;
+    private boolean mCurrentPostureGood = true;        // start out assuming good posture
+    private int mHysteresisCounter = 0;
+    private int mBadPostureReminderCounter = 0;
 
     // Configuration settings sent from main activity.
     private boolean mAlertNotification = DEFAULT_CHECKBOX;
@@ -69,15 +71,15 @@ public class OrientationService extends Service {
     private int GOOD_POSTURE_VIBRATION_TIME = 30;        // units of milliseconds
     private static final int SERVICE_NOTIFICATION_ID = 1;
     private static final int POSTURE_NOTIFICATION_ID = 2;
-    private static final int POSTURE_LED_NOTIFICATION_ID = 3;
     private static final String SERVICE_NOTIFICATION_TITLE = "serviceNotification";
     private static final String POSTURE_NOTIFICATION_TITLE = "postureNotification";
+    private static final String TURN_OFF_SERVICE_ACTION = "turnOffService";
+    private static final int TURN_OFF_SERVICE_REQUEST_CODE = 12345;
     private NotificationManager mNotificationManager;
     private enum NotificationType {
         SERVICE_RUNNING,
         BAD_POSTURE
     }
-    private int debugCounter = 0;
 
 
     /**
@@ -105,7 +107,6 @@ public class OrientationService extends Service {
         }
         if( mResults == null) {
             mResults = new PostureResults();
-            mResults.resetResults();
         }
         if( mVibrator == null) {
             mVibrator = (Vibrator)getSystemService(VIBRATOR_SERVICE);
@@ -187,6 +188,8 @@ public class OrientationService extends Service {
             Log.e(TAG, "mOrientation was null in onDestroy().  That should never happen.");
         }
 
+        mResults.logResultSequence();
+
         mNotificationManager.cancel(SERVICE_NOTIFICATION_ID);
         // This object is a de-facto singleton
         OrientationService.sIsRunning = false;
@@ -202,7 +205,6 @@ public class OrientationService extends Service {
     private void startChecking() {
         try {
             mOrientation.startOrienting();
-            debugCounter = 0;
             // This object is essentially a singleton
             OrientationService.sIsRunning = true;
 
@@ -257,15 +259,40 @@ public class OrientationService extends Service {
         @Override
         public void run() {
             int z = mOrientation.getZ();
-            Log.d(TAG, "z=" + z);
 
-            if( (z > mZAxisPosThreshold) || (z < -mZAxisNegThreshold)) {
-                if( mResults.recordBadSample() ) {
-                    badPostureAlerts();
+            if( mResults.recordSample(z) ) {        // Good posture
+                if( ! mCurrentPostureGood ) {
+                    mHysteresisCounter++;
+                    Log.d(TAG, "z=" + z + ", posture improving");
+                    if( mHysteresisCounter >= POSITIVE_HYSTERESIS ) {
+                        mCurrentPostureGood = true;
+                        mHysteresisCounter = 0;
+                        goodPostureAlerts();
+                    }
+                } else {
+                    Log.d(TAG, "z=" + z + ", still good posture");
+                    mHysteresisCounter = 0;
                 }
-            } else {
-                if (mResults.recordGoodSample()) {
-                    goodPostureAlerts();
+
+            } else {                                // Bad posture
+                if( mCurrentPostureGood) {
+                    Log.d(TAG, "z=" + z + ", posture getting worse");
+                    mHysteresisCounter++;
+                    if( mHysteresisCounter >= NEGATIVE_HYSTERESIS ) {
+                        mCurrentPostureGood = false;
+                        mHysteresisCounter = 0;
+                        badPostureAlerts();
+                        mBadPostureReminderCounter = 0;
+                    }
+                } else {
+                    Log.d(TAG, "z=" + z + ", posture still bad");
+                    mHysteresisCounter = 0;
+
+                    mBadPostureReminderCounter++;
+                    if( mBadPostureReminderCounter >= mBadPostureReminderCountThreshold) {
+                        mBadPostureReminderCounter = 0;
+                        badPostureAlerts();     // Send a reminder
+                    }
                 }
             }
         }
@@ -312,7 +339,7 @@ public class OrientationService extends Service {
         int id;
         int icon;
 
-        if( mAlertNotification || !send ) {      // always attempt to cancel pending notifications
+        if (mAlertNotification || !send) {      // always attempt to cancel pending notifications
             switch (n) {
 
                 case SERVICE_RUNNING:
@@ -346,13 +373,22 @@ public class OrientationService extends Service {
                                 .setContentTitle(title)
                                 .setContentText(text);
 
+                // Add an action to turn off the service
+                Intent turnOffIntent = new Intent();
+                turnOffIntent.setAction(TURN_OFF_SERVICE_ACTION);
+                PendingIntent pendingIntentTurnOff =
+                        PendingIntent.getBroadcast(this,
+                                TURN_OFF_SERVICE_REQUEST_CODE,
+                                turnOffIntent,
+                                PendingIntent.FLAG_UPDATE_CURRENT);
+                mBuilder.addAction(R.drawable.ic_posture, getString(R.string.turn_off_service), pendingIntentTurnOff);
+
                 mNotificationManager.notify(id, mBuilder.build());
 
             } else {
                 mNotificationManager.cancel(id);
             }
         }
-
     }
 
     /**
@@ -361,7 +397,6 @@ public class OrientationService extends Service {
      * @param badPosture if true, this is a bad posture signal.  False sends a good posture signal.
      */
     private void vibrate( boolean badPosture ) {
-        Log.d(TAG,"vibrate: mAlertVibration = " + mAlertVibration);
         if( mAlertVibration ) {
             int vibrationTime = GOOD_POSTURE_VIBRATION_TIME;
             if (badPosture) {

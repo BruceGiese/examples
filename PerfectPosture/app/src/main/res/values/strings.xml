@@ -14,6 +14,7 @@
 
     <string name="start_tilt_detection">Start Posture Detection</string>
     <string name="stop_tilt_detection">Stop Posture Detection</string>
+    <string name="turn_off_service">Turn off service</string>
     <string name="no_gravity_sensor">No gravity sensor was detected, sorry.</string>
     <string name="no_service">Gravity service is not currently available</string>
     <string name="service_notification_text">PerfectPosture service is running</string>
