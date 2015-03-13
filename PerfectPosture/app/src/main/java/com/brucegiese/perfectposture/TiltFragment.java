@@ -96,6 +96,7 @@ public class TiltFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        getActivity().unbindService(mConnection);
         // If the service is not doing orientation, then stop the whole service
         if( ! OrientationService.sInstance.checkIsRunning()) {
             Log.d(TAG, "onDestroy(): Stopping the service");

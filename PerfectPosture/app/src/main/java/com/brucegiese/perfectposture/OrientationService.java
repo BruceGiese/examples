@@ -1,15 +1,18 @@
 package com.brucegiese.perfectposture;
 
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
+import android.os.PowerManager;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
@@ -32,10 +35,12 @@ public class OrientationService extends Service {
     public static OrientationService sInstance = null;
 
     /** Warning: These strings MUST match up with the strings in preferences.xml */
-    public static final String PREF_NOTIFICATION = "pref_notifications";
-    public static final String PREF_VIBRATE = "pref_vibrate";
-    public static final String PREF_LED = "pref_led";
-    public static final boolean DEFAULT_CHECKBOX = true;    // default for checkboxes is true
+    private static final String PREF_NOTIFICATION = "pref_notifications";
+    private static final String PREF_VIBRATE = "pref_vibrate";
+    private static final String PREF_LED = "pref_led";
+    private static final boolean DEFAULT_CHECKBOX = true;    // default for checkboxes is true
+    private static final int LED_ON_TIME = 200;              // units of milliseconds
+    private static final int LED_OFF_TIME = 200;
 
     public static final int MSG_START_MONITORING = 1;
     public static final int MSG_STOP_MONITORING = 2;
@@ -64,6 +69,7 @@ public class OrientationService extends Service {
     private int GOOD_POSTURE_VIBRATION_TIME = 30;        // units of milliseconds
     private static final int SERVICE_NOTIFICATION_ID = 1;
     private static final int POSTURE_NOTIFICATION_ID = 2;
+    private static final int POSTURE_LED_NOTIFICATION_ID = 3;
     private static final String SERVICE_NOTIFICATION_TITLE = "serviceNotification";
     private static final String POSTURE_NOTIFICATION_TITLE = "postureNotification";
     private NotificationManager mNotificationManager;
@@ -267,18 +273,28 @@ public class OrientationService extends Service {
      * Send out all alerts associated with a bad posture event
      */
     private void badPostureAlerts() {
-        Log.d(TAG, "Posture is bad!");
-        vibrate(true);
-        sendNotification(NotificationType.BAD_POSTURE, true);
+        PowerManager pm = (PowerManager)getSystemService(POWER_SERVICE);
+        if( pm.isScreenOn() ) {     // This was deprecated in API level 20
+            Log.d(TAG, "Posture is bad!");
+            vibrate(true);
+            sendNotification(NotificationType.BAD_POSTURE, true);
+        } else {
+            Log.d(TAG, "badPostureAlerts() Screen is not interactive right now");
+        }
     }
 
     /**
      * Send out all alerts associated with a good posture event
      */
     private void goodPostureAlerts() {
-        Log.d(TAG, "Posture just got good!");
-        vibrate(false);
-        sendNotification(NotificationType.BAD_POSTURE, false);
+        PowerManager pm = (PowerManager)getSystemService(POWER_SERVICE);
+        if( pm.isScreenOn() ) {     // This was deprecated in API level 20
+            Log.d(TAG, "Posture just got good!");
+            vibrate(false);
+            sendNotification(NotificationType.BAD_POSTURE, false);
+        } else {
+            Log.d(TAG, "goodPostureAlerts() Screen is not interactive right now");
+        }
 
     }
 
@@ -327,11 +343,14 @@ public class OrientationService extends Service {
                                 .setContentIntent(pIntent)
                                 .setContentTitle(title)
                                 .setContentText(text);
+
                 mNotificationManager.notify(id, mBuilder.build());
+
             } else {
                 mNotificationManager.cancel(id);
             }
         }
+
     }
 
     /**
