@@ -217,7 +217,8 @@ public class OrientationService extends Service {
                                 mUpdateInterval,
                                 TimeUnit.SECONDS);
 
-                sendNotification(NotificationType.SERVICE_RUNNING, true);
+// We're removing the service notification
+//                sendNotification(NotificationType.SERVICE_RUNNING, true);
 
             } else {
                 Log.e(TAG, "startChecking() was called when checking was already running");
@@ -233,7 +234,8 @@ public class OrientationService extends Service {
      */
     private void stopChecking() {
         sendNotification(NotificationType.BAD_POSTURE, false);
-        sendNotification(NotificationType.SERVICE_RUNNING, false);
+// We're removing the service notification
+//        sendNotification(NotificationType.SERVICE_RUNNING, false);
         // This object is essentially a singleton
         OrientationService.sIsRunning = false;
         if( mScheduledFuture != null) {
