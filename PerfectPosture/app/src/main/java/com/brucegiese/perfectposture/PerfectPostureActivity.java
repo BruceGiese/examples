@@ -3,22 +3,23 @@ package com.brucegiese.perfectposture;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
-import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
 /**
  * This displays the orientation of the device with respect to gravity.
- * It can be enabled/disabled via a button and the values are displayed
- * from -10 to zero to +10 on the X, Y, and Z axes.  Despite the accuracy
- * of the math, it goes to 11 on some devices (e.g. mine).
+ * It can be enabled/disabled via a button and has configurable
+ * parameters as implemented in TiltFragment.
  *
- * To create a posture detection application, this would presumably need to
- * run as a service, define acceptable ranges for posture, and alert the user
- * to bad posture and maybe consistently good posture.
+ * This activity receives a data stream of posture values from the
+ * TiltFragment and sends them to the GraphFragment for display.
+ * The data stream is implemented as the DataSampleListener interface.
  */
-public class PerfectPostureActivity extends Activity {
+public class PerfectPostureActivity extends Activity
+        implements TiltFragment.DataSampleListener {
+    private final static String TAG = "com.brucegiese.perfpost";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,4 +54,18 @@ public class PerfectPostureActivity extends Activity {
         }
         return super.onOptionsItemSelected(item);
     }
+
+
+    /**
+     * This implements the DataSampleListener interface in the TiltFragment.
+     * This receives one data sample representing the current state of the user's
+     * posture.
+     *
+     * @param value  a value representing the current posture.
+     */
+    @Override
+    public void onDataSampleReceived(int value) {
+        Log.d(TAG, "received data sample: " + value);
+    }
+
 }

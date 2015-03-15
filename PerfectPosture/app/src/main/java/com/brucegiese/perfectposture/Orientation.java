@@ -17,7 +17,7 @@ import android.hardware.SensorManager;
  *
  */
 public class Orientation implements SensorEventListener {
-    private static final String TAG = "com.brucegiese.tiltdetector.orientation";
+    private static final String TAG = "com.brucegiese.orient";
     private static final float G_FORCE = 9.78f;         // gravity in meters per second squared
     private static final float MAX_INTEGER = 180f;       // maximum integer value to return
     private static final float ALMOST_HALF = .4999f;    // need to round up

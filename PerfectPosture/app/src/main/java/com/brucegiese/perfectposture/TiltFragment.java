@@ -1,16 +1,16 @@
 package com.brucegiese.perfectposture;
 
+import android.app.Activity;
 import android.app.Fragment;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
-import android.preference.Preference;
-import android.preference.PreferenceManager;
+import android.os.RemoteException;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,14 +21,27 @@ import android.widget.Button;
  * This fragment allows the user to start and stop the posture measurement service.
  */
 public class TiltFragment extends Fragment {
-    private static final String TAG = "com.brucegiese.t";
+    private static final String TAG = "com.brucegiese.tilt";
+    private DataSampleListener dataSampleListener;
     private View mView;
     private boolean mButtonState = false;
-    private Messenger mService;         // service for communicating with OrientationService
+    private Messenger mToService;         // messenger for communicating to OrientationService
+    private Messenger mFromService;       // messenger for getting msgs from OrientationService
     private boolean mServiceConnected = false;
 
 
     public TiltFragment() { }
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        try {
+            dataSampleListener = (DataSampleListener)activity;
+        } catch( ClassCastException e) {
+            throw new ClassCastException(activity.toString()
+                    + "must implement onDataSampleReceived()");
+        }
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -148,13 +161,22 @@ public class TiltFragment extends Fragment {
          */
         public void onServiceConnected(ComponentName className, IBinder service) {
             mServiceConnected = true;
-            mService = new Messenger(service);
+            mToService = new Messenger(service);
+
+            try {
+                // Register this activity with the data sending service
+                Message msg = Message.obtain(null, OrientationService.MSG_REGISTER_CLIENT);
+                msg.replyTo = fromServiceMessenger;
+                mToService.send(msg);
+            } catch(RemoteException e) {
+                Log.e(TAG, "Error registering Activity's messenger with service", e);
+            }
         }
 
         public void onServiceDisconnected(ComponentName className) {
             // Called when the connection with the service was unexpectedly disconnected
             Log.e(TAG, "ServiceConnection: The OrientationService probably crashed, onServiceDisconnected() called");
-            mService = null;
+            mToService = null;
             mServiceConnected = false;
         }
     };
@@ -174,11 +196,41 @@ public class TiltFragment extends Fragment {
         } else {
             Message msg = Message.obtain(null, message, arg1, arg2);
             try {
-                mService.send(msg);
+                mToService.send(msg);
             } catch (Exception e) {
                 Log.e(TAG, "Exception trying to send message " + message, e);
             }
         }
+    }
+
+    private class IncomingHandler extends Handler {
+
+        @Override
+        public void handleMessage(Message msg) {
+
+            switch( msg.what) {
+
+                case OrientationService.MSG_DATA_SAMPLE:
+                    dataSampleListener.onDataSampleReceived(msg.arg1);  // send to the Activity
+                    break;
+
+                default:
+                    super.handleMessage(msg);
+                    break;
+            }
+        }
+    }
+
+    final Messenger fromServiceMessenger = new Messenger(new IncomingHandler());
+
+
+    /**
+     * The Activity must implement this interface in order to receive a stream
+     * of data samples from this Fragment.  This data stream can be used for
+     * a graphical display or whatever else is useful.
+     */
+    public interface DataSampleListener {
+        public void onDataSampleReceived(int value);
     }
 
 }

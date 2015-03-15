@@ -3,14 +3,17 @@ package com.brucegiese.perfectposture;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.PowerManager;
+import android.os.RemoteException;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
@@ -38,6 +41,8 @@ public class OrientationService extends Service {
     private static final boolean DEFAULT_CHECKBOX = true;    // default for checkboxes is true
 
     // Number of consecutive good/bad samples before we declare a change in posture.
+    // This hysteresis is only for the user's benefit in giving alerts.  It's not saved in data.
+    // That's why this functionality is here and not in PostureResults.
     private static final int POSITIVE_HYSTERESIS = 4;
     private static final int NEGATIVE_HYSTERESIS = 8;
     // number of additional consecutive bad posture samples before we issue a reminder
@@ -46,12 +51,21 @@ public class OrientationService extends Service {
 
     public static final int MSG_START_MONITORING = 1;
     public static final int MSG_STOP_MONITORING = 2;
+    public static final int MSG_REGISTER_CLIENT = 3;
+    public static final int MSG_UNREGISTER_CLIENT = 4;
+    public static final int MSG_DATA_SAMPLE = 101;                  // this is outgoing
 
     private static final int DEFAULT_UPDATE_INTERVAL = 1;           // units of seconds
 
     private Orientation mOrientation = null;
     private ScheduledExecutorService mScheduler;
     private ScheduledFuture mScheduledFuture;
+    private Messenger mToClientMessenger;
+
+//
+// We want to support multiple Activities running simultaneously, but it crashes when we add to the ArrayList
+//    private ArrayList<Messenger> mClientMessengerArrayList;               // Activities wanting to RX real-time data
+
 
     private int mUpdateInterval = DEFAULT_UPDATE_INTERVAL;
 
@@ -105,9 +119,6 @@ public class OrientationService extends Service {
         if( mOrientation == null) {
             mOrientation = new Orientation(this);
         }
-        if( mResults == null) {
-            mResults = new PostureResults();
-        }
         if( mVibrator == null) {
             mVibrator = (Vibrator)getSystemService(VIBRATOR_SERVICE);
         }
@@ -120,8 +131,6 @@ public class OrientationService extends Service {
     }
 
 
-    // Documentation says don't Override onStartCommand().  If you do, make sure to
-    // return super.onStartCommand() with the same args.
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand() called");
@@ -147,6 +156,22 @@ public class OrientationService extends Service {
                     stopChecking();
                     break;
 
+                case MSG_REGISTER_CLIENT:
+                    Log.d(TAG, "An Activity registered a handler with the service");
+                    if( msg.replyTo != null) {
+//                        mClientMessengerArrayList.add(msg.replyTo);
+                        mToClientMessenger = msg.replyTo;
+                    } else {
+                        Log.e(TAG, "We got a null replyTo messenger from an Activity");
+                    }
+                    break;
+
+                case MSG_UNREGISTER_CLIENT:
+                    Log.d(TAG, "An Activity unregistered a handler with the service");
+//                    mClientMessengerArrayList.remove(msg.replyTo);
+                    mToClientMessenger = null;
+                    break;
+
                 default:
                     super.handleMessage(msg);
             }
@@ -154,9 +179,30 @@ public class OrientationService extends Service {
     }
 
     /**
+     * This provides a means for getting a connection to the service.
+     */
+    private ServiceConnection mToClientConnection = new ServiceConnection() {
+
+        /** this is called when the connection with the service has been established,
+         * giving us the object we can use for the service.  We need a client-side
+         * representation of the Messenger from the raw IBinder object
+         */
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            mToClientMessenger = new Messenger(service);
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            // Called when the connection with the service was unexpectedly disconnected
+            Log.e(TAG, "ServiceConnection: Activity probably crashed, lost messenger connection");
+            mToClientMessenger = null;
+        }
+    };
+
+    /**
      * Target we publish for the client to send messages to IncomingHandler
      */
-    public final Messenger mMessenger = new Messenger( new IncomingHandler());
+    final Messenger fromClientMessenger = new Messenger( new IncomingHandler());
+
 
     /**
      * When binding to the service, we return an interface to our messenger for sending
@@ -165,7 +211,7 @@ public class OrientationService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         Log.d(TAG, "onBind called");
-        return mMessenger.getBinder();
+        return fromClientMessenger.getBinder();
     }
 
 
@@ -188,8 +234,6 @@ public class OrientationService extends Service {
             Log.e(TAG, "mOrientation was null in onDestroy().  That should never happen.");
         }
 
-        mResults.logResultSequence();
-
         mNotificationManager.cancel(SERVICE_NOTIFICATION_ID);
         // This object is a de-facto singleton
         OrientationService.sIsRunning = false;
@@ -204,6 +248,8 @@ public class OrientationService extends Service {
      */
     private void startChecking() {
         try {
+            mResults = new PostureResults();        // Set up the data collection for this session.
+
             mOrientation.startOrienting();
             // This object is essentially a singleton
             OrientationService.sIsRunning = true;
@@ -218,10 +264,6 @@ public class OrientationService extends Service {
                                 mUpdateInterval,
                                 mUpdateInterval,
                                 TimeUnit.SECONDS);
-
-// We're removing the service notification
-//                sendNotification(NotificationType.SERVICE_RUNNING, true);
-
             } else {
                 Log.e(TAG, "startChecking() was called when checking was already running");
             }
@@ -235,10 +277,17 @@ public class OrientationService extends Service {
      *  when the checking has already been stopped.
      */
     private void stopChecking() {
+        // remove any bad posture notifications
         sendNotification(NotificationType.BAD_POSTURE, false);
-// We're removing the service notification
-//        sendNotification(NotificationType.SERVICE_RUNNING, false);
-        // This object is essentially a singleton
+
+        if( mResults != null) {     // wrap-up the data collection
+            mResults.endSampling();
+            // TODO: Save the current session out to external storage.
+            mResults.logResultSequence();
+            mResults = null;        // for now, let garbage collection destroy the data.
+        } else {
+            Log.e(TAG, "Internal logic error: there was no results object when stopping");
+        }
         OrientationService.sIsRunning = false;
         if( mScheduledFuture != null) {
             mScheduledFuture.cancel(true);
@@ -260,23 +309,31 @@ public class OrientationService extends Service {
         public void run() {
             int z = mOrientation.getZ();
 
+            // Send the data point to the Activity to plot it.
+            if( mToClientMessenger != null) {
+                try {
+                    Message msg = Message.obtain(null, MSG_DATA_SAMPLE, z, 0);
+                    msg.replyTo = fromClientMessenger;
+                    mToClientMessenger.send(msg);
+                } catch (RemoteException e) {
+                    Log.e(TAG, "Remote Exception when sending a data point: ", e);
+                }
+            }
+
             if( mResults.recordSample(z) ) {        // Good posture
                 if( ! mCurrentPostureGood ) {
                     mHysteresisCounter++;
-                    Log.d(TAG, "z=" + z + ", posture improving");
                     if( mHysteresisCounter >= POSITIVE_HYSTERESIS ) {
                         mCurrentPostureGood = true;
                         mHysteresisCounter = 0;
                         goodPostureAlerts();
                     }
                 } else {
-                    Log.d(TAG, "z=" + z + ", still good posture");
                     mHysteresisCounter = 0;
                 }
 
             } else {                                // Bad posture
                 if( mCurrentPostureGood) {
-                    Log.d(TAG, "z=" + z + ", posture getting worse");
                     mHysteresisCounter++;
                     if( mHysteresisCounter >= NEGATIVE_HYSTERESIS ) {
                         mCurrentPostureGood = false;
@@ -285,7 +342,6 @@ public class OrientationService extends Service {
                         mBadPostureReminderCounter = 0;
                     }
                 } else {
-                    Log.d(TAG, "z=" + z + ", posture still bad");
                     mHysteresisCounter = 0;
 
                     mBadPostureReminderCounter++;

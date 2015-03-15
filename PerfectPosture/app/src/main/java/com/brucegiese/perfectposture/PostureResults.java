@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Date;
 
 // TODO: Serialize this to JSON and write it out to (and read it from) external storage.
+// TODO: Make sure the configuration values are taken from the previously used instance.
 /**
  * This class represents the data collected about the user's posture.
  * Results are grouped by beginning and ending of the posture monitoring service.
@@ -26,7 +27,6 @@ public class PostureResults {
     private int mZAxisNegThreshold = DEFAULT_Z_AXIS_NEG_THRESHOLD;
 
     private ArrayList<Integer> mPersistentSeq;  // run length encoded good/bad data (small data set)
-    private ArrayList<Integer> mAngleSeq;       // the list of actual angles (large data set)
 
     int mGoodPostureSamples;            // total count of good posture samples
     int mBadPostureSamples;             // total count of bad posture samples
@@ -41,7 +41,6 @@ public class PostureResults {
 
     public PostureResults() {
         mPersistentSeq = new ArrayList<Integer>();  // the integers here are good/bad run counts
-        mAngleSeq = new ArrayList<Integer>();       // the integers here are angles
         mStartDate = new Date();        // Assume that we're going to start sampling right away
         mCurrentPostureGood = true;     // sampling begins with number of good samples, possibly 0
         mObjectJustCreated = true;      // this is needed to know if we just starting sampling
@@ -54,7 +53,6 @@ public class PostureResults {
      */
     public boolean recordSample(int angle) {
 
-        mAngleSeq.add(new Integer(angle));
         if( angle > mZAxisPosThreshold || angle < mZAxisNegThreshold ) {
             // bad posture
             mBadPostureSamples++;
@@ -91,6 +89,21 @@ public class PostureResults {
         }
     }
 
+    /**
+     * Call this routine when sampling has ended.  This method does any wrap-up needed.
+     */
+    public void endSampling() {
+        // Record the run-length value for the current sequence of good or bad posture points.
+        if( mCurrentConsecutiveGoodSamples != 0) {
+            mPersistentSeq.add(new Integer(mCurrentConsecutiveGoodSamples));
+            mCurrentConsecutiveGoodSamples = 0;
+        }
+        if( mCurrentConsecutiveBadSamples != 0) {
+            mPersistentSeq.add(new Integer(mCurrentConsecutiveBadSamples));
+            mCurrentConsecutiveBadSamples = 0;
+        }
+        mObjectJustCreated = false;
+    }
 
     /**
      * Get the percentage of time user has had bad posture
@@ -117,10 +130,6 @@ public class PostureResults {
                 good = true;
                 Log.i(TAG, "Bad:  " + i.toString());
             }
-        }
-        Log.i(TAG, "Actual Angle Results:");
-        for( Integer i : mAngleSeq) {
-            Log.i(TAG, i.toString());
         }
     }
 }
