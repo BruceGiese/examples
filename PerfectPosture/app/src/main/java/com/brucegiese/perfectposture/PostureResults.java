@@ -23,8 +23,10 @@ public class PostureResults {
 
     private static final int DEFAULT_Z_AXIS_POS_THRESHOLD = 20;     // units of degrees
     private static final int DEFAULT_Z_AXIS_NEG_THRESHOLD = -20;    // units of degrees
-    private int mZAxisPosThreshold = DEFAULT_Z_AXIS_POS_THRESHOLD;
-    private int mZAxisNegThreshold = DEFAULT_Z_AXIS_NEG_THRESHOLD;
+
+    // These thresholds are used throughout the app, so they need to be static
+    public static int mZAxisPosThreshold = DEFAULT_Z_AXIS_POS_THRESHOLD;
+    public static int mZAxisNegThreshold = DEFAULT_Z_AXIS_NEG_THRESHOLD;
 
     private ArrayList<Integer> mPersistentSeq;  // run length encoded good/bad data (small data set)
 

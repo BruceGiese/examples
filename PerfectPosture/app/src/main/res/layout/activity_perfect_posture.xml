@@ -10,10 +10,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_weight="1"/>
+        android:layout_weight="4"/>
 
     <FrameLayout
-        android:id="@+id/fragment_container"
+        android:id="@+id/graph_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_gravity="center"
+        android:layout_weight="12"/>
+
+    <FrameLayout
+        android:id="@+id/controls_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"

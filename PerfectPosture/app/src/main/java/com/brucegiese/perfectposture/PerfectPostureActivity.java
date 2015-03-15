@@ -20,6 +20,7 @@ import android.view.MenuItem;
 public class PerfectPostureActivity extends Activity
         implements TiltFragment.DataSampleListener {
     private final static String TAG = "com.brucegiese.perfpost";
+    GraphFragment graphFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,15 +28,20 @@ public class PerfectPostureActivity extends Activity
         setContentView(R.layout.activity_perfect_posture);
 
         FragmentManager fm = getFragmentManager();
-        Fragment f = fm.findFragmentById(R.id.fragment_container);
+        Fragment f = fm.findFragmentById(R.id.controls_container);
         if( f == null ) {
             TiltFragment tiltFragment = new TiltFragment();
-            fm.beginTransaction().add(R.id.fragment_container, tiltFragment).commit();
+            fm.beginTransaction().add(R.id.controls_container, tiltFragment).commit();
         }
         Fragment fs = fm.findFragmentById(R.id.pref_container);
         if( fs == null ) {
             SettingsFragment settingsFragment = new SettingsFragment();
             fm.beginTransaction().add(R.id.pref_container, settingsFragment).commit();
+        }
+        Fragment fg = fm.findFragmentById((R.id.graph_container));
+        if( fg == null ) {
+            graphFragment = new GraphFragment();
+            fm.beginTransaction().add(R.id.graph_container, graphFragment).commit();
         }
     }
 
@@ -65,7 +71,7 @@ public class PerfectPostureActivity extends Activity
      */
     @Override
     public void onDataSampleReceived(int value) {
-        Log.d(TAG, "received data sample: " + value);
+        graphFragment.addNewPoint(value);
     }
 
 }
