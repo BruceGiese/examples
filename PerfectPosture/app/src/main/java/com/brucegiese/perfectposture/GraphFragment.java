@@ -1,6 +1,7 @@
 package com.brucegiese.perfectposture;
 
 
+import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.app.Fragment;
@@ -8,72 +9,40 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 
-import org.achartengine.ChartFactory;
-import org.achartengine.GraphicalView;
-import org.achartengine.model.XYMultipleSeriesDataset;
-import org.achartengine.model.XYSeries;
-import org.achartengine.renderer.XYMultipleSeriesRenderer;
-import org.achartengine.renderer.XYSeriesRenderer;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.LimitLine;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+
+import java.util.ArrayList;
 
 public class GraphFragment extends Fragment {
     private static final String TAG = "com.brucegiese.graph";
-    int index = 0;
-    // Stores X,Y pairs
-    private XYSeries mSeries;
-    // Stores multiple X,Y objects and plots them
-    private XYMultipleSeriesDataset mDataset = new XYMultipleSeriesDataset();
-    // Renders a single X,Y series
-    private XYSeriesRenderer mRenderer;
-    // Renders all the X,Y points in the data set
-    private XYMultipleSeriesRenderer mMultRenderer = new XYMultipleSeriesRenderer();
-    // View object for displaying the graph
-    private GraphicalView mChart;
-
-    private static final int X_WINDOW_SIZE = 30;
-    private int mXmin;              // create a sliding window of a fixed size
-    private int mXmax;
+    private static final int DATA_POINTS_TO_SHOW = 30;
+    private Activity mActivity;
+    private LineChart mLineChart;
+    private int mIndex = 0;
+    ArrayList<Entry> mPostureSamples;
+    LineData mLineData;
+    LineDataSet mPostureDataSet;
 
     public GraphFragment() {
         Log.d(TAG, "GraphFragment constructor called");
-        // TODO: use a resource for this string.
-        mSeries = new XYSeries("Posture");
-        mDataset.addSeries(mSeries);
-        mRenderer = new XYSeriesRenderer();
-        mRenderer.setColor(Color.BLUE);
-        mRenderer.setLineWidth(4);
-        mRenderer.setFillPoints(false);
-        mMultRenderer.addSeriesRenderer(mRenderer);
-        mMultRenderer.setBackgroundColor(Color.WHITE);
-        mMultRenderer.setMarginsColor(Color.WHITE);
-        mMultRenderer.setYTitle("Posture Angle (degrees)");
-        mMultRenderer.setApplyBackgroundColor(true);
-        mMultRenderer.setAxisTitleTextSize(40.0f);
-        mMultRenderer.setChartTitleTextSize(40.0f);
-        mMultRenderer.setLabelsTextSize(30.0f);
-        mMultRenderer.setMargins(new int[]{50, 100, 40, 100});
-        mMultRenderer.setZoomEnabled(false, false);
-        mMultRenderer.setPanEnabled(false, false);
-        mMultRenderer.setShowGridY(false);
-        mMultRenderer.setShowGridX(true);
-        mMultRenderer.setGridColor(Color.LTGRAY);
-        mMultRenderer.setYAxisMin(-180);
-        mMultRenderer.setYAxisMax(180);
-        mMultRenderer.setBarSpacing(20);
-        mMultRenderer.setXLabels(0);
+    }
 
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        mActivity = activity;
+    }
 
-
-        // TODO: use resources for these strings
-        mMultRenderer.addYTextLabel(50, "bad");
-        mMultRenderer.addYTextLabel(0, "good");
-        mMultRenderer.addYTextLabel(-50, "bad");
-
-        mXmin = 0;
-        mXmax = X_WINDOW_SIZE;
-        mMultRenderer.setXAxisMin( (double)mXmin);
-        mMultRenderer.setXAxisMax( (double)mXmax);
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
     }
 
 
@@ -83,53 +52,112 @@ public class GraphFragment extends Fragment {
         Log.d(TAG, "GraphFragment onCreateView() called");
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_graph, container, false);
-        FrameLayout graph = (FrameLayout)v.findViewById(R.id.graph);
-        graph.setFocusable(false);
+        mLineChart = (LineChart)v.findViewById(R.id.chart);
 
-        mChart = ChartFactory.getLineChartView(getActivity(), mDataset, mMultRenderer);
-        graph.addView(mChart);
+        mLineChart.setBackgroundColor(Color.WHITE);
+        // TODO: Change these strings to resources
+        mLineChart.setDescription("");
+        mLineChart.setNoDataText("Start posture detection to create a chart!");
+        mLineChart.setDrawGridBackground(true);
+        mLineChart.setGridBackgroundColor(Color.LTGRAY);
+        mLineChart.setDrawBorders(false);
+
+        /*
+        *       Y-Axis stuff
+         */
+        YAxis yAxisRight = mLineChart.getAxisRight();
+        yAxisRight.setEnabled(false);
+
+        YAxis yAxis = mLineChart.getAxisLeft();
+        yAxis.setEnabled(true);
+        yAxis.setDrawAxisLine(true);
+        yAxis.setDrawGridLines(true);
+        yAxis.setDrawLabels(true);
+        yAxis.setDrawTopYLabelEntry(true);
+        yAxis.setLabelCount(9);
+        yAxis.setStartAtZero(false);
+        yAxis.setAxisMaxValue(199);
+        yAxis.setAxisMinValue(-199);
+        yAxis.setSpaceTop(4.0f);       // leave this much percent space above max value
+        yAxis.setSpaceBottom(4.0f);    // leave this much percent space below min value
+        // TODO: Change this string to a resource
+        LimitLine upperLimit = new LimitLine(20.0f, "Max forward tilt");
+        upperLimit.setLineColor(Color.RED);
+        upperLimit.setLineWidth(.5f);
+        upperLimit.setTextColor(Color.RED);
+        upperLimit.setTextSize(8f);
+        upperLimit.setLabelPosition(LimitLine.LimitLabelPosition.POS_LEFT);
+        yAxis.addLimitLine(upperLimit);
+        // TODO: Change this string to a resource
+        LimitLine lowerLimit = new LimitLine(-20.0f, "Max backward tilt");
+        lowerLimit.setLineColor(Color.RED);
+        lowerLimit.setLineWidth(.5f);
+        lowerLimit.setTextColor(Color.RED);
+        lowerLimit.setTextSize(8f);
+        lowerLimit.setLabelPosition(LimitLine.LimitLabelPosition.POS_LEFT);
+        yAxis.addLimitLine(lowerLimit);
+        // TODO: Change this string to a resource
+        LimitLine zeroLimit = new LimitLine(0f, "Best posture");
+        zeroLimit.setLineColor(Color.GREEN);
+        zeroLimit.setLineWidth(1f);
+        zeroLimit.setTextColor(Color.GREEN);
+        zeroLimit.setTextSize(8f);
+        yAxis.addLimitLine(zeroLimit);
+
+        /*
+        *       X-Axis stuff
+         */
+        XAxis xAxis = mLineChart.getXAxis();
+        xAxis.setDrawLabels(false);
+        xAxis.setEnabled(false);
+
+        /*
+        *       Data
+         */
+        mPostureSamples = new ArrayList<Entry>();
+        // TODO: Change this string to a resource
+        mPostureDataSet = new LineDataSet(mPostureSamples, "Posture Readings");
+        mPostureDataSet.setValueTextSize(0);            // Can't find any other way to disable txt
+        mPostureDataSet.setCircleSize(2);
+        mPostureDataSet.setLineWidth(2);
+        mPostureDataSet.setColor(Color.BLACK);
+        mPostureDataSet.setCircleColor(Color.BLACK);
+
+        ArrayList<LineDataSet> dataSets = new ArrayList<LineDataSet>();
+        dataSets.add(mPostureDataSet);
+        ArrayList<String> xVals = new ArrayList<String>();
+        xVals.add("");                                  // just to be safe
+
+        // Don't use any X-axis labels
+        mLineData = new LineData(xVals, dataSets);      // LineData is a subclass of ChartData
+
+        mLineChart.setGridBackgroundColor(Color.WHITE);
+        mLineChart.setData(mLineData);
+        mLineChart.invalidate();
         return v;
     }
 
 
-    public void addNewPoint(int value){
-
-        // Get rid of any annotations immediately before we add the next point.
-        if( mSeries.getAnnotationCount() > 0 ) {
-            // The index here means the annotation's index, which is always zero
-            // since we never have more than one on the screen.
-            mSeries.removeAnnotation(0);
+    public void addNewPoint(int value) {
+        if( value > 180 ) {                     // constrain to plus or minus 180 degrees.
+            value = 180;
         }
-
-        mSeries.add((double)index, (double)value);
-
-        if( value > PostureResults.mZAxisPosThreshold) {
-            Log.d(TAG, "addNewPoint(): above the range at " + value);
-            mRenderer.setColor(Color.RED);
-            // TODO: use a resource for this string
-            mSeries.addAnnotation("HIGH", (double)(index), (double)value);
-
-        } else if( value < PostureResults.mZAxisNegThreshold) {
-            Log.d(TAG, "addNewPoint(): below the range at " + value);
-            mRenderer.setColor(Color.RED);
-            // TODO: use a resource for this string
-            mSeries.addAnnotation("LOW", (double)(index), (double)value);
-
-        } else {
-            Log.d(TAG, "addNewPoint(): new value " + value);
-            mRenderer.setColor(Color.GREEN);
+        if( value < -180 ) {
+            value = -180;
         }
+        Log.d(TAG, "addNewPoint() index=" + mIndex);
+        Entry point = new Entry((float) value, mIndex);
 
-        // This implements a sliding window on the screen.
-        if( (double)index >= X_WINDOW_SIZE) {
-            mXmin++;
-            mXmax++;
-            mMultRenderer.setXAxisMin( (double)mXmin);
-            mMultRenderer.setXAxisMax( (double)mXmax);
+//        mPostureDataSet.addEntry(point);
+        mLineData.addXValue("");                // we don't want to show an X value
+        mLineData.addEntry(point, 0);           // We have one dataset, it's index is 0
+        mLineChart.notifyDataSetChanged();
+        if( mIndex >= DATA_POINTS_TO_SHOW) {
+            mLineChart.setVisibleXRange(DATA_POINTS_TO_SHOW);
+            mLineChart.moveViewToX(mLineData.getXValCount() - DATA_POINTS_TO_SHOW);
         }
-
-        mChart.repaint();
-        index++;
+        mLineChart.invalidate();
+        mIndex++;
     }
 
 }

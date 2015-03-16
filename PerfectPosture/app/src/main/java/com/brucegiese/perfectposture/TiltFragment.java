@@ -70,13 +70,13 @@ public class TiltFragment extends Fragment {
             public void onClick(View v) {
                 // We're already connected to the service, so send the message now
                 if (mButtonState) {
-                    Log.d(TAG, "onClick(): start monitoring");
+                    Log.d(TAG, "onClick(): stop monitoring");
                     stopOrientation();
                     ((Button) v).setText(R.string.start_tilt_detection);
                     mButtonState = false;
 
                 } else {
-                    Log.d(TAG, "onClick(): stop monitoring");
+                    Log.d(TAG, "onClick(): start monitoring");
                     startOrientation();
                     ((Button) v).setText(R.string.stop_tilt_detection);
                     mButtonState = true;
