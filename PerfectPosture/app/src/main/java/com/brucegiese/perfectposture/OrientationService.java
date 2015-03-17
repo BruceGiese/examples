@@ -437,6 +437,7 @@ public class OrientationService extends Service {
                                 TURN_OFF_SERVICE_REQUEST_CODE,
                                 turnOffIntent,
                                 PendingIntent.FLAG_UPDATE_CURRENT);
+                // TODO: Need to handle turning off the service from the notification (see statement below)
                 mBuilder.addAction(R.drawable.ic_posture, getString(R.string.turn_off_service), pendingIntentTurnOff);
 
                 mNotificationManager.notify(id, mBuilder.build());

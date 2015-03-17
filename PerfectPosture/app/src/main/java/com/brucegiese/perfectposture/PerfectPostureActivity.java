@@ -20,7 +20,7 @@ import android.view.MenuItem;
 public class PerfectPostureActivity extends Activity
         implements TiltFragment.DataSampleListener {
     private final static String TAG = "com.brucegiese.perfpost";
-    GraphFragment graphFragment;
+    private GraphFragment mGraphFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,10 +38,10 @@ public class PerfectPostureActivity extends Activity
             SettingsFragment settingsFragment = new SettingsFragment();
             fm.beginTransaction().add(R.id.pref_container, settingsFragment).commit();
         }
-        Fragment fg = fm.findFragmentById((R.id.graph_container));
-        if( fg == null ) {
-            graphFragment = new GraphFragment();
-            fm.beginTransaction().add(R.id.graph_container, graphFragment).commit();
+        mGraphFragment = (GraphFragment)fm.findFragmentById((R.id.graph_container));
+        if( mGraphFragment == null ) {
+            mGraphFragment = new GraphFragment();
+            fm.beginTransaction().add(R.id.graph_container, mGraphFragment).commit();
         }
     }
 
@@ -71,7 +71,8 @@ public class PerfectPostureActivity extends Activity
      */
     @Override
     public void onDataSampleReceived(int value) {
-        graphFragment.addNewPoint(value);
+        if(mGraphFragment != null) {         // on rotations, this can briefly be null
+            mGraphFragment.addNewPoint(value);
+        }
     }
-
 }

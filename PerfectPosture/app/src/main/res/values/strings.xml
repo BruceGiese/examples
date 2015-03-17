@@ -20,7 +20,10 @@
     <string name="service_notification_text">PerfectPosture service is running</string>
     <string name="posture_notification_text">Hold the phone more vertically</string>
 
-<!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="no_chart_data">"Start posture detection to create a chart!"</string>
+    <string name="posture_readings">posture readings"</string>
+    <string name="max_forward_tilt">"max forward tilt"</string>
+    <string name="max_backward_tilt">"max backward tilt"</string>
+    <string name="best_posture">"best posture"</string>
 
 </resources>

@@ -19,7 +19,7 @@ import android.hardware.SensorManager;
 public class Orientation implements SensorEventListener {
     private static final String TAG = "com.brucegiese.orient";
     private static final float G_FORCE = 9.78f;         // gravity in meters per second squared
-    private static final float MAX_INTEGER = 180f;       // maximum integer value to return
+    private static final float SCALE_FACTOR = 90f;      // scale for angular degrees
     private static final float ALMOST_HALF = .4999f;    // need to round up
     Context mContext;
     private SensorManager mSensorManager;
@@ -95,12 +95,12 @@ public class Orientation implements SensorEventListener {
     /**
      * Get the current value of the X-axis orientation data.
      * This can be called from the UI thread.
-     * @return an integer from -MAX_INTEGER (upside down) to +MAX_INTEGER (right side up)
+     * @return an integer representing the X-axis tilt angle
      * IMPOSSIBLE_INTEGER means the result is not valid.
      */
     public int getX() {
         if( mGravity != null) {
-            return Math.round(mGravity[0] * (MAX_INTEGER/G_FORCE) + ALMOST_HALF);
+            return Math.round(mGravity[0] * (SCALE_FACTOR /G_FORCE) + ALMOST_HALF);
         } else {
             return IMPOSSIBLE_INTEGER;
         }
@@ -109,12 +109,12 @@ public class Orientation implements SensorEventListener {
     /**
      * Get the current value of the y-axis orientation data.
      * This can be called from the UI thread.
-     * @return an integer from -MAX_INTEGER (upside down) to +MAX_INTEGER (right side up)
+     * @return an integer representing the Y-axis tilt angle
      * IMPOSSIBLE_INTEGER means the result is not valid.
      */
     public int getY() {
         if( mGravity != null) {
-            return Math.round(mGravity[1] * (MAX_INTEGER/G_FORCE) + ALMOST_HALF);
+            return Math.round(mGravity[1] * (SCALE_FACTOR /G_FORCE) + ALMOST_HALF);
         } else {
             return IMPOSSIBLE_INTEGER;
         }
@@ -123,12 +123,12 @@ public class Orientation implements SensorEventListener {
     /**
      * Get the current value of the Z-axis orientation data.
      * This can be called from the UI thread.
-     * @return an integer from -MAX_INTEGER (upside down) to +MAX_INTEGER (right side up)
+     * @return an integer representing the Z-axis tilt angle
      * IMPOSSIBLE_INTEGER means the result is not valid.
      */
     public int getZ() {
         if( mGravity != null) {
-            return Math.round(mGravity[2] * (MAX_INTEGER/G_FORCE) + ALMOST_HALF);
+            return Math.round(mGravity[2] * (SCALE_FACTOR /G_FORCE) + ALMOST_HALF);
         } else {
             return IMPOSSIBLE_INTEGER;
         }
