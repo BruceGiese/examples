@@ -83,7 +83,7 @@ public class GraphFragment extends Fragment {
         // TODO: Change this string to a resource
         LimitLine upperLimit = new LimitLine(20.0f, "Max forward tilt");
         upperLimit.setLineColor(Color.RED);
-        upperLimit.setLineWidth(.5f);
+        upperLimit.setLineWidth(2f);
         upperLimit.setTextColor(Color.RED);
         upperLimit.setTextSize(8f);
         upperLimit.setLabelPosition(LimitLine.LimitLabelPosition.POS_LEFT);
@@ -91,7 +91,7 @@ public class GraphFragment extends Fragment {
         // TODO: Change this string to a resource
         LimitLine lowerLimit = new LimitLine(-20.0f, "Max backward tilt");
         lowerLimit.setLineColor(Color.RED);
-        lowerLimit.setLineWidth(.5f);
+        lowerLimit.setLineWidth(2f);
         lowerLimit.setTextColor(Color.RED);
         lowerLimit.setTextSize(8f);
         lowerLimit.setLabelPosition(LimitLine.LimitLabelPosition.POS_LEFT);
@@ -99,7 +99,7 @@ public class GraphFragment extends Fragment {
         // TODO: Change this string to a resource
         LimitLine zeroLimit = new LimitLine(0f, "Best posture");
         zeroLimit.setLineColor(Color.GREEN);
-        zeroLimit.setLineWidth(1f);
+        zeroLimit.setLineWidth(2f);
         zeroLimit.setTextColor(Color.GREEN);
         zeroLimit.setTextSize(8f);
         yAxis.addLimitLine(zeroLimit);
@@ -158,6 +158,18 @@ public class GraphFragment extends Fragment {
         }
         mLineChart.invalidate();
         mIndex++;
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        // Cleanup whatever we can... and hope garbage collection does the rest.
+        mLineChart.setEnabled(false);
+        mLineChart.removeAllViews();        // Not sure if this is needed
+        mLineChart = null;
+        mLineData.removeDataSet(0);
+        mPostureDataSet = null;
+        mPostureSamples = null;
     }
 
 }
