@@ -13,6 +13,7 @@ import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.LimitLine;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.DataSet;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
@@ -20,7 +21,10 @@ import com.github.mikephil.charting.data.LineDataSet;
 
 public class GraphFragment extends Fragment {
     private static final String TAG = "com.brucegiese.graph";
+    private static final String VALUES_KEY = "com.brucegiese.values";
     private static final int DATA_POINTS_TO_SHOW = 30;
+    private static final int DARK_GREEN = 0xFF006600;
+    private static final int DARK_RED = 0xFFB22222;
 
     private LineChart mLineChart;
     private int mIndex;
@@ -55,34 +59,37 @@ public class GraphFragment extends Fragment {
         yAxis.setDrawGridLines(true);
         yAxis.setDrawLabels(true);
         yAxis.setDrawTopYLabelEntry(true);
-        yAxis.setLabelCount(9);
+        yAxis.setLabelCount(17);
         yAxis.setStartAtZero(false);
-        yAxis.setAxisMaxValue(90);
-        yAxis.setAxisMinValue(-90);
-        yAxis.setSpaceTop(4.0f);       // leave this much percent space above max value
-        yAxis.setSpaceBottom(4.0f);    // leave this much percent space below min value
+        yAxis.setAxisMaxValue(95);
+        yAxis.setAxisMinValue(-95);
+        yAxis.setSpaceTop(0.0f);       // leave this much percent space above max value
+        yAxis.setSpaceBottom(0.0f);    // leave this much percent space below min value
 
         LimitLine upperLimit = new LimitLine(20.0f, getString(R.string.max_forward_tilt));
-        upperLimit.setLineColor(Color.RED);
+        upperLimit.setLineColor(DARK_RED);
         upperLimit.setLineWidth(2f);
-        upperLimit.setTextColor(Color.RED);
+        upperLimit.setTextColor(DARK_RED);
         upperLimit.setTextSize(10f);
+        upperLimit.enableDashedLine(10, 10, 0);
         upperLimit.setLabelPosition(LimitLine.LimitLabelPosition.POS_LEFT);
 
         yAxis.addLimitLine(upperLimit);
         LimitLine lowerLimit = new LimitLine(-20.0f, getString(R.string.max_backward_tilt));
-        lowerLimit.setLineColor(Color.RED);
+        lowerLimit.setLineColor(DARK_RED);
         lowerLimit.setLineWidth(2f);
-        lowerLimit.setTextColor(Color.RED);
+        lowerLimit.setTextColor(DARK_RED);
         lowerLimit.setTextSize(10f);
+        lowerLimit.enableDashedLine(10, 10, 0);
         lowerLimit.setLabelPosition(LimitLine.LimitLabelPosition.POS_LEFT);
         yAxis.addLimitLine(lowerLimit);
 
         LimitLine zeroLimit = new LimitLine(0f, getString(R.string.best_posture));
-        zeroLimit.setLineColor(Color.GREEN);
+        zeroLimit.setLineColor(DARK_GREEN);
         zeroLimit.setLineWidth(2f);
-        zeroLimit.setTextColor(Color.GREEN);
+        zeroLimit.setTextColor(DARK_GREEN);
         zeroLimit.setTextSize(10f);
+        zeroLimit.enableDashedLine(10, 10, 0);
         zeroLimit.setLabelPosition(LimitLine.LimitLabelPosition.POS_LEFT);
         yAxis.addLimitLine(zeroLimit);
 
@@ -109,26 +116,51 @@ public class GraphFragment extends Fragment {
         ArrayList<LineDataSet> dataSets = new ArrayList<LineDataSet>();
         dataSets.add(mLineDataSet);
         ArrayList<String> xVals = new ArrayList<String>();
-        xVals.add("");                                  // just to be safe
 
         mLineData = new LineData(xVals, dataSets);      // LineData is a subclass of ChartData
         mLineChart.setGridBackgroundColor(Color.WHITE);
         mLineChart.setData(mLineData);
+
+        // See if we have any saved data to add
+        if( savedInstanceState != null) {
+            int[] values = savedInstanceState.getIntArray(VALUES_KEY);
+            if (values != null) {
+                Log.d(TAG, "We have saved data with " + values.length + " samples.");
+                for (int i = 0; i < values.length; i++) {
+                    mLineData.addXValue("");
+                    mLineData.addEntry(new Entry((float) values[i], i), 0);
+                }
+                mIndex = values.length;
+            }
+        }
+
         mChartValid = true;
         mLineChart.invalidate();
         return v;
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        if( mLineData != null) {
+            DataSet d = mLineData.getDataSetByIndex(0);
+            int [] values = new int[d.getValueCount()];
+            for( int i=0; i<d.getEntryCount(); i++) {
+                values[i] = Math.round(d.getEntryForXIndex(i).getVal());
+            }
+            outState.putIntArray(VALUES_KEY, values);
+        }
+    }
+
 
     public void addNewPoint(int value) {
-        if( value > 90 ) {                     // constrain to plus or minus 180 degrees.
+        if( value > 90 ) {                          // constrain to plus or minus 90 degrees.
             value = 90;
         }
         if( value < -90 ) {
             value = -90;
         }
 
-        if( mChartValid) {                      // The chart is not valid during rotations, etc.
+        if( mChartValid) {                          // chart is not valid during rotations etc.
             Log.d(TAG, "addNewPoint() " + value);
             Entry point = new Entry((float) value, mIndex);
             mLineData.addXValue("");                // we don't want to show an X value
