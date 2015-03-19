@@ -26,4 +26,10 @@
     <string name="max_backward_tilt">"max backward tilt"</string>
     <string name="best_posture">"best posture"</string>
 
+    <string name="page_title_intro">Intro</string>
+    <string name="page_title_data">Data</string>
+    <string name="page_title_settings">Settings</string>
+
+    <string name="intro_fragment_text">This is the introduction page</string>
+
 </resources>

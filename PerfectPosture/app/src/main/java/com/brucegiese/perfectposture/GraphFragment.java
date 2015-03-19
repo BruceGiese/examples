@@ -1,7 +1,6 @@
 package com.brucegiese.perfectposture;
 
 import java.util.ArrayList;
-import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.app.Fragment;
@@ -34,11 +33,18 @@ public class GraphFragment extends Fragment {
     private boolean mChartValid = false;
 
     @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate() called");
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        Log.d(TAG, "onCreateView() called");
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_graph, container, false);
-        mLineChart = (LineChart)v.findViewById(R.id.chart);
+        mLineChart = (LineChart) v.findViewById(R.id.chart);
 
         mLineChart.setBackgroundColor(Color.WHITE);
         mLineChart.setDescription("");
@@ -103,6 +109,8 @@ public class GraphFragment extends Fragment {
         /*
         *       Data setup
          */
+
+        Log.d(TAG, "Starting with new data");
         mIndex = 0;
         mPostureSamples = new ArrayList<Entry>();
         mLineDataSet = new LineDataSet(mPostureSamples, getString(R.string.posture_readings));
@@ -122,7 +130,7 @@ public class GraphFragment extends Fragment {
         mLineChart.setData(mLineData);
 
         // See if we have any saved data to add
-        if( savedInstanceState != null) {
+        if (savedInstanceState != null) {
             int[] values = savedInstanceState.getIntArray(VALUES_KEY);
             if (values != null) {
                 Log.d(TAG, "We have saved data with " + values.length + " samples.");
@@ -132,6 +140,8 @@ public class GraphFragment extends Fragment {
                 }
                 mIndex = values.length;
             }
+        } else {
+            Log.d(TAG, "no saved data");
         }
 
         mChartValid = true;
@@ -142,12 +152,15 @@ public class GraphFragment extends Fragment {
     @Override
     public void onSaveInstanceState(Bundle outState) {
         if( mLineData != null) {
+            Log.d(TAG, "saving mLineData into Bundle");
             DataSet d = mLineData.getDataSetByIndex(0);
             int [] values = new int[d.getValueCount()];
             for( int i=0; i<d.getEntryCount(); i++) {
                 values[i] = Math.round(d.getEntryForXIndex(i).getVal());
             }
             outState.putIntArray(VALUES_KEY, values);
+        } else {
+            Log.d(TAG, "can't save mLineData into Bundle");
         }
     }
 
@@ -172,12 +185,15 @@ public class GraphFragment extends Fragment {
             }
             mLineChart.invalidate();
             mIndex++;
+        } else {
+            Log.d(TAG, "addNewPoint() mChartValid is false");
         }
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        Log.d(TAG, "onDestroyView() called");
         // Cleanup whatever we can... and hope garbage collection does the rest.
         mChartValid = false;
         mLineChart.clear();
@@ -188,5 +204,11 @@ public class GraphFragment extends Fragment {
         mLineData = null;
         mLineDataSet = null;
         mPostureSamples = null;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "onDestroy() called");
     }
 }
