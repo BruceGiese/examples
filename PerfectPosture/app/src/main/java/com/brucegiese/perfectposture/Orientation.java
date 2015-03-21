@@ -17,7 +17,6 @@ import android.hardware.SensorManager;
  *
  */
 public class Orientation implements SensorEventListener {
-    private static final String TAG = "com.brucegiese.orient";
     private static final float G_FORCE = 9.78f;         // gravity in meters per second squared
     private static final float SCALE_FACTOR = 90f;      // scale for angular degrees
     private static final float ALMOST_HALF = .4999f;    // need to round up
@@ -67,7 +66,6 @@ public class Orientation implements SensorEventListener {
 
 
     /**
-    *  @hide
     *   Sensor Event Listener Interface Methods
     *   This gets called when one of the sensors for gravity detection is no longer
     *   available which results in a loss of accuracy (or the opposite).
@@ -77,7 +75,6 @@ public class Orientation implements SensorEventListener {
     }
 
     /**
-     * @hide
      * @param event see sensor listener documentation
      */
     @Override
@@ -89,34 +86,6 @@ public class Orientation implements SensorEventListener {
         */
         if( event.sensor.getType() == Sensor.TYPE_GRAVITY) {
                 mGravity = event.values;
-        }
-    }
-
-    /**
-     * Get the current value of the X-axis orientation data.
-     * This can be called from the UI thread.
-     * @return an integer representing the X-axis tilt angle
-     * IMPOSSIBLE_INTEGER means the result is not valid.
-     */
-    public int getX() {
-        if( mGravity != null) {
-            return Math.round(mGravity[0] * (SCALE_FACTOR /G_FORCE) + ALMOST_HALF);
-        } else {
-            return IMPOSSIBLE_INTEGER;
-        }
-    }
-
-    /**
-     * Get the current value of the y-axis orientation data.
-     * This can be called from the UI thread.
-     * @return an integer representing the Y-axis tilt angle
-     * IMPOSSIBLE_INTEGER means the result is not valid.
-     */
-    public int getY() {
-        if( mGravity != null) {
-            return Math.round(mGravity[1] * (SCALE_FACTOR /G_FORCE) + ALMOST_HALF);
-        } else {
-            return IMPOSSIBLE_INTEGER;
         }
     }
 

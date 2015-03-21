@@ -2,12 +2,18 @@ package com.brucegiese.perfectposture;
 
 import android.os.Bundle;
 import android.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 public class IntroFragment extends Fragment {
+    private static final String TAG = "com.brucegiese.intro";
 
+    /**
+     * This is the Introduction screen for the application.  It contains the start/stop button.
+     * This is done to make it easy for the user to open the app and start/stop.
+     */
     public IntroFragment() {  }
 
     @Override
@@ -20,5 +26,4 @@ public class IntroFragment extends Fragment {
                              Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_intro, container, false);
     }
-
 }

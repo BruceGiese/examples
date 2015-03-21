@@ -6,11 +6,9 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
-import android.os.RemoteException;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,26 +20,13 @@ import android.widget.Button;
  */
 public class TiltFragment extends Fragment {
     private static final String TAG = "com.brucegiese.tilt";
-    private DataSampleListener dataSampleListener;
     private View mView;
     private boolean mButtonState = false;
-    private Messenger mToService;         // messenger for communicating to OrientationService
-    private Messenger mFromService;       // messenger for getting msgs from OrientationService
+    private Messenger mService;         // messenger for communicating to OrientationService
     private boolean mServiceConnected = false;
 
 
     public TiltFragment() { }
-
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        try {
-            dataSampleListener = (DataSampleListener)activity;
-        } catch( ClassCastException e) {
-            throw new ClassCastException(activity.toString()
-                    + "must implement onDataSampleReceived()");
-        }
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -53,7 +38,7 @@ public class TiltFragment extends Fragment {
         // make it persistent by calling this before attempting to bind
         getActivity().startService(intent);
         getActivity().bindService(new Intent(getActivity(), OrientationService.class),
-                    mConnection, getActivity().BIND_AUTO_CREATE);
+                    mConnection, Activity.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -109,7 +94,7 @@ public class TiltFragment extends Fragment {
         super.onDestroy();
         getActivity().unbindService(mConnection);
         // If the service is not doing orientation, then stop the whole service
-        if( ! OrientationService.sInstance.checkIsRunning()) {
+        if( ! OrientationService.checkIsRunning()) {
             Log.d(TAG, "onDestroy(): Stopping the service");
             Intent intent = new Intent(getActivity(), OrientationService.class);
             // make it persistent by calling this before attempting to bind
@@ -123,7 +108,7 @@ public class TiltFragment extends Fragment {
      * reliable way of keeping track of the service without going into AIDL.
      */
     private void checkAndSetButtonState() {
-        mButtonState = OrientationService.sInstance.checkIsRunning();
+        mButtonState = OrientationService.checkIsRunning();
         if( mView != null ) {
             Button button = (Button) mView.findViewById(R.id.start_stop_button);
             if( mButtonState ) {
@@ -159,22 +144,13 @@ public class TiltFragment extends Fragment {
          */
         public void onServiceConnected(ComponentName className, IBinder service) {
             mServiceConnected = true;
-            mToService = new Messenger(service);
-
-            try {
-                // Register this activity with the data sending service
-                Message msg = Message.obtain(null, OrientationService.MSG_REGISTER_CLIENT);
-                msg.replyTo = fromServiceMessenger;
-                mToService.send(msg);
-            } catch(RemoteException e) {
-                Log.e(TAG, "Error registering Activity's messenger with service", e);
-            }
+            mService = new Messenger(service);
         }
 
         public void onServiceDisconnected(ComponentName className) {
             // Called when the connection with the service was unexpectedly disconnected
             Log.e(TAG, "ServiceConnection: The OrientationService probably crashed, onServiceDisconnected() called");
-            mToService = null;
+            mService = null;
             mServiceConnected = false;
         }
     };
@@ -183,8 +159,8 @@ public class TiltFragment extends Fragment {
     private void sendMessage(int message) { sendMessage(message, 0, 0); }
     private void sendMessage(int message, int arg1) { sendMessage(message, arg1, 0); }
     /**
-     *
-     * @param message
+     *  Send a message to the service.
+     * @param message start or stop monitoring. Message definitions are in OrientationService
      * @param arg1 optional integer argument as part of normal messages
      * @param arg2 optional integer argument as part of normal messages
      */
@@ -194,41 +170,10 @@ public class TiltFragment extends Fragment {
         } else {
             Message msg = Message.obtain(null, message, arg1, arg2);
             try {
-                mToService.send(msg);
+                mService.send(msg);
             } catch (Exception e) {
                 Log.e(TAG, "Exception trying to send message " + message, e);
             }
         }
     }
-
-    private class IncomingHandler extends Handler {
-
-        @Override
-        public void handleMessage(Message msg) {
-
-            switch( msg.what) {
-
-                case OrientationService.MSG_DATA_SAMPLE:
-                    dataSampleListener.onDataSampleReceived(msg.arg1);  // send to the Activity
-                    break;
-
-                default:
-                    super.handleMessage(msg);
-                    break;
-            }
-        }
-    }
-
-    final Messenger fromServiceMessenger = new Messenger(new IncomingHandler());
-
-
-    /**
-     * The Activity must implement this interface in order to receive a stream
-     * of data samples from this Fragment.  This data stream can be used for
-     * a graphical display or whatever else is useful.
-     */
-    public interface DataSampleListener {
-        public void onDataSampleReceived(int value);
-    }
-
 }

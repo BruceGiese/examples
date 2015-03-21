@@ -7,11 +7,21 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-sdk android:minSdkVersion="14" />
 
-    <application
+    <!-- android:name definition is for ActiveAndroid -->
+    <application android:name="com.activeandroid.app.Application"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
+        <meta-data android:name="AA_DB_NAME" android:value="Pickrand.db" /> <!-- ActiveAndroid -->
+        <meta-data android:name="AA_DB_VERSION" android:value="5" /> <!-- ActiveAndroid -->
+        <meta-data android:name="AA_MODELS"
+                   android:value="com.brucegiese.perfectposture.Sample" />
+        <!-- ActiveAndroid as provider -->
+        <provider android:authorities="com.brucegiese"
+                  android:exported="false"
+                  android:name="com.activeandroid.content.ContentProvider" />
+
         <activity
             android:name=".PerfectPostureActivity"
             android:label="@string/app_name"
@@ -27,6 +37,7 @@
             android:name=".OrientationService"
             android:exported="false" >
         </service>
+
     </application>
 
 </manifest>

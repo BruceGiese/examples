@@ -3,6 +3,9 @@ package com.brucegiese.perfectposture;
 import android.os.Bundle;
 import android.preference.PreferenceFragment;
 
+
+// TODO: add a "clear data" button, which must be outside the PreferenceFragment, unfortunately
+
 public class SettingsFragment extends PreferenceFragment {
 
     @Override
@@ -10,16 +13,6 @@ public class SettingsFragment extends PreferenceFragment {
         super.onCreate(savedInstanceState);
 
         addPreferencesFromResource(R.xml.preferences);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        // TODO: check the settings to see if they've changed.  Another instance can change them.
-        // Probably need to save the View from onCreateView() and then check the individual
-        // settings here manually, one-by-one.
-
     }
 
 }
