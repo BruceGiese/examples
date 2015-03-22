@@ -4,8 +4,6 @@ import android.os.Bundle;
 import android.preference.PreferenceFragment;
 
 
-// TODO: add a "clear data" button, which must be outside the PreferenceFragment, unfortunately
-
 public class SettingsFragment extends PreferenceFragment {
 
     @Override

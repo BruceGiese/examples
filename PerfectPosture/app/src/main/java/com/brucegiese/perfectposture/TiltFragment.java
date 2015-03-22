@@ -1,5 +1,6 @@
 package com.brucegiese.perfectposture;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.ComponentName;
@@ -155,8 +156,8 @@ public class TiltFragment extends Fragment {
         }
     };
 
-
     private void sendMessage(int message) { sendMessage(message, 0, 0); }
+    @SuppressLint("all")        // We might as well support all three cases of args
     private void sendMessage(int message, int arg1) { sendMessage(message, arg1, 0); }
     /**
      *  Send a message to the service.

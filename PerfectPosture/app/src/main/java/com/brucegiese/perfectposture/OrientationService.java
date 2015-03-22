@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class OrientationService extends Service {
     private static final String TAG = "com.brucegiese.service";
-    public static final String DATA_INTENT = "com.brucegiese.perfectposture.Sample";
+    public static final String NEW_DATA_POINT_INTENT = "com.brucegiese.perfectposture.Sample";
     public static final String EXTRA_VALUE = "value";                // Z-axis posture value
     /**
      * Is the service running right now?  We need to effectively create a singleton object
@@ -257,7 +257,7 @@ public class OrientationService extends Service {
             sample.save();
 
             // Broadcast the data point
-            Intent bcastIntent = new Intent(DATA_INTENT);
+            Intent bcastIntent = new Intent(NEW_DATA_POINT_INTENT);
             bcastIntent.putExtra(EXTRA_VALUE, z);
             // Don't bother adding the date or goodPosture value
             LocalBroadcastManager.getInstance(mContext).sendBroadcast(bcastIntent);

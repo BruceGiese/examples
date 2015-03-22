@@ -31,5 +31,6 @@
     <string name="page_title_settings">Settings</string>
 
     <string name="intro_fragment_text">This is the introduction page</string>
+    <string name="clear_data_button_text">Clear Data</string>
 
 </resources>

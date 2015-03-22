@@ -15,6 +15,9 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+
+import com.activeandroid.query.Delete;
 import com.activeandroid.query.Select;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.LimitLine;
@@ -56,6 +59,21 @@ public class GraphFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_graph, container, false);
+
+        Button button = (Button) v.findViewById(R.id.clear_data_button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Clear all the data from the database (and also the chart)
+                Log.d(TAG, "clearing data");
+                new Delete().from(Sample.class).execute();      // delete all records!!!
+                setupData();                                    // delete data in the chart
+            }
+        });
+
+        /*
+        *       Set up the chart
+         */
         mLineChart = (LineChart) v.findViewById(R.id.chart);
 
         mLineChart.setBackgroundColor(Color.WHITE);
@@ -121,6 +139,28 @@ public class GraphFragment extends Fragment {
         /*
         *       Data setup
          */
+        setupData();
+
+        /*
+        *       Chart interactions
+         */
+        mLineChart.setDragEnabled(true);
+        mLineChart.setPinchZoom(false);
+
+        // Register the broadcast receiver
+        IntentFilter iFilter = new IntentFilter();
+        iFilter.addAction(OrientationService.NEW_DATA_POINT_INTENT);
+        LocalBroadcastManager.getInstance(getActivity())
+                .registerReceiver(mDataReceiver, iFilter);
+
+        return v;
+    }
+
+    /**
+     * Set up the data in the fragment.  This can be called to refresh the data if
+     * the user clears out the database, for instance.
+     */
+    private void setupData() {
         mIndex = 0;
         mPostureSamples = new ArrayList<Entry>();
         mLineDataSet = new LineDataSet(mPostureSamples, getString(R.string.posture_readings));
@@ -143,18 +183,6 @@ public class GraphFragment extends Fragment {
         new LoadFromDatabase().execute();
         mChartValid = true;
         mLineChart.invalidate();
-
-        /*
-        *       Chart interactions
-         */
-        mLineChart.setDragEnabled(true);
-        mLineChart.setPinchZoom(false);
-
-        // Register the broadcast receiver
-        LocalBroadcastManager.getInstance(getActivity())
-                .registerReceiver(mDataReceiver, new IntentFilter(OrientationService.DATA_INTENT));
-
-        return v;
     }
 
     @Override
@@ -201,11 +229,10 @@ public class GraphFragment extends Fragment {
          * @return                  List of all the Sample objects from the database
          */
         protected List<Sample> doInBackground(Void... x) {
-            List<Sample> list = new Select()
+            return new Select()
                     .from(Sample.class)
                     .orderBy("_ID ASC")
                     .execute();
-            return list;
         }
 
         protected void onPostExecute(List<Sample> values) {
@@ -225,8 +252,13 @@ public class GraphFragment extends Fragment {
 
         @Override
         public void onReceive(Context c, Intent i) {
-            int value = i.getIntExtra(OrientationService.EXTRA_VALUE, Orientation.IMPOSSIBLE_INTEGER);
-            addPoint(value);
+            if( i.getAction().equals(OrientationService.NEW_DATA_POINT_INTENT)) {
+                    int value = i.getIntExtra(OrientationService.EXTRA_VALUE, Orientation.IMPOSSIBLE_INTEGER);
+                    addPoint(value);
+            } else {
+                Log.e(TAG, "Received an unexpected broadcast intent");
+            }
+
         }
     }
 }

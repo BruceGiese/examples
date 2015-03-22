@@ -22,6 +22,7 @@ public class PerfectPostureActivity extends Activity {
     private final static int DATA_PAGE = 1;
     private final static int SETTINGS_PAGE = 2;
     private final static int LAST_PAGE_NUM = SETTINGS_PAGE;
+    SectionsPagerAdapter mSectionsPagerAdapter;
     ViewPager mViewPager;
 
     @Override
@@ -29,15 +30,20 @@ public class PerfectPostureActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_perfect_posture);
 
-        SectionsPagerAdapter sectionsPagerAdapter = new SectionsPagerAdapter(getFragmentManager());
+        mSectionsPagerAdapter = new SectionsPagerAdapter(getFragmentManager());
         mViewPager = (ViewPager) findViewById(R.id.pager);
         mViewPager.setOffscreenPageLimit(LAST_PAGE_NUM+1);
-        mViewPager.setAdapter(sectionsPagerAdapter);
+        mViewPager.setAdapter(mSectionsPagerAdapter);
 
         final PagerTabStrip pts = (PagerTabStrip) findViewById(R.id.pager_tab_strip);
         pts.setDrawFullUnderline(false);        // This doesn't work for some reason.
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mSectionsPagerAdapter = null;
+    }
 
     /**
      * Pager adapter for main activity which is just a ViewPager for the small
@@ -91,6 +97,6 @@ public class PerfectPostureActivity extends Activity {
 
             }
         }
-    }
 
+    }
 }

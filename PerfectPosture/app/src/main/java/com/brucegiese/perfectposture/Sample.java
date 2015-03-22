@@ -1,6 +1,7 @@
 package com.brucegiese.perfectposture;
 
 
+import android.annotation.SuppressLint;
 import android.provider.BaseColumns;
 
 import com.activeandroid.Model;
@@ -14,7 +15,8 @@ public class Sample extends Model {
     @Column(name="Value")
     public int value;
 
-    public Sample() {
+    @SuppressLint("all")
+    public Sample() {       // This constructor is mandatory.  Don't remove it.
         super();
     }
 
