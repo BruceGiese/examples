@@ -36,7 +36,7 @@ public class PerfectPostureActivity extends Activity {
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
         final PagerTabStrip pts = (PagerTabStrip) findViewById(R.id.pager_tab_strip);
-        pts.setDrawFullUnderline(false);        // This doesn't work for some reason.
+        pts.setTextColor(getResources().getColor(R.color.medium_secondary_color));
     }
 
     @Override

@@ -4,18 +4,26 @@
     <style name="PerfectPostureActionBarTheme"
            parent="@android:style/Theme.Holo.Light.DarkActionBar">
         <item name="android:actionBarStyle">@style/PerfectPostureActionBar</item>
-        <item name="android:textColorPrimary">@color/light_secondary_color</item>
-        <item name="android:textColorSecondary">@color/very_light_secondary_color</item>
+        <item name="android:actionBarTabTextStyle">@style/PerfectPostureActionBarTabText</item>
+        <item name="android:actionMenuTextColor">@color/medium_secondary_color</item>
     </style>
 
-    <!-- ActionBar styles -->
     <style name="PerfectPostureActionBar"
-           parent="@android:style/Widget.Holo.Light.ActionBar.Solid.Inverse">
+           parent="@android:style/Widget.Holo.ActionBar">
         <item name="android:background">@color/dark_main_color</item>
+        <item name="android:titleTextStyle">@style/PerfectPostureActionBarTitleText</item>
+
     </style>
 
-    <style name="MyCheckBox" parent="@android:style/Widget.CompoundButton.CheckBox">
-        <item name="android:button">@android:drawable/btn_star</item>
+    <style name="PerfectPostureActionBarTitleText"
+           parent="@android:style/TextAppearance.Holo.Widget.ActionBar.Title">
+        <item name="android:textColor">@color/medium_secondary_color</item>
     </style>
+
+    <style name="PerfectPostureActionBarTabText"
+           parent="@android:style/Widget.Holo.ActionBar.TabText">
+        <item name="android:textColor">@color/medium_secondary_color</item>
+    </style>
+
 
 </resources>
