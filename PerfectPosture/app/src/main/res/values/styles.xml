@@ -1,8 +1,25 @@
 <resources>
 
-    <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
+        <item name="android:textColorPrimary">@color/light_secondary_color</item>
+    </style>
+
+    <style name="PerfectPostureButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginBottom">20dp</item>
+        <item name="android:layout_marginTop">20dp</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:textColor">@color/medium_secondary_color</item>
+        <item name="android:background">@color/medium_main_color</item>
+        <item name="android:paddingRight">10dp</item>
+        <item name="android:paddingLeft">10dp</item>
+    </style>
+
+    <style name="PerfectPostureBackground">
+        <item name="android:textSize">18sp</item>
+        <item name="android:background">@color/neutral_main_color</item>
+        <item name="android:textColor">@color/light_secondary_color</item>
     </style>
 
 </resources>

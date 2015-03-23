@@ -9,7 +9,7 @@ import android.view.ViewGroup;
 public class IntroFragment extends Fragment {
 
     /**
-     * This is the Introduction screen for the application.  It contains the start/stop button.
+     * This is the Introduction screen for the application.  It contains the start/stop big_checkbox.
      * This is done to make it easy for the user to open the app and start/stop.
      */
     public IntroFragment() {  }

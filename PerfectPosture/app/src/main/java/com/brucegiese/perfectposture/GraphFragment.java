@@ -76,7 +76,7 @@ public class GraphFragment extends Fragment {
          */
         mLineChart = (LineChart) v.findViewById(R.id.chart);
 
-        mLineChart.setBackgroundColor(Color.WHITE);
+        mLineChart.setBackgroundColor(0xFF122D96);
         mLineChart.setDescription("");
         mLineChart.setNoDataText(getString(R.string.no_chart_data));
         mLineChart.setDrawGridBackground(true);

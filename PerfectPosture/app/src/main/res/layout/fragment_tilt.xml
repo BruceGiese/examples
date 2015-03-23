@@ -2,24 +2,21 @@
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:orientation="vertical"
-              android:gravity="center">
+              android:gravity="center"
+              style="@style/PerfectPostureBackground">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:text="@string/intro_fragment_text"
+        style="@style/PerfectPostureBackground"
         android:gravity="center"
-        android:textIsSelectable="false"
-        android:textSize="18sp"/>
+        android:textIsSelectable="false"/>
 
     <Button
         android:text="@string/start_tilt_detection"
         android:id="@+id/start_stop_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
-        android:layout_marginTop="20dp"
-        android:layout_gravity="center"/>
+        style="@style/PerfectPostureButton"/>
 
 </LinearLayout>

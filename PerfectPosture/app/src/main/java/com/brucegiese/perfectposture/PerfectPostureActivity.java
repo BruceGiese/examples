@@ -12,7 +12,7 @@ import android.util.Log;
 
 /**
  * This displays the orientation of the device with respect to gravity.
- * It can be enabled/disabled via a button and has configurable
+ * It can be enabled/disabled via a big_checkbox and has configurable
  * parameters as implemented in TiltFragment.
  *
  */

@@ -3,21 +3,24 @@
 
     <!-- The key String names here must match up with the Strings used in onSharedPreferenceChanged -->
     <CheckBoxPreference
+        android:widgetLayout="@layout/custom_checkbox"
         android:key="pref_notifications"
         android:title="@string/pref_notification"
         android:summary="@string/pref_notification_summ"
-        android:defaultValue="true" />
+        android:defaultValue="true"/>
 
     <CheckBoxPreference
+        android:widgetLayout="@layout/custom_checkbox"
         android:key="pref_vibrate"
         android:title="@string/pref_vibrate"
         android:summary="@string/pref_vibrate_summ"
-        android:defaultValue="true" />
+        android:defaultValue="true"/>
 
     <CheckBoxPreference
+        android:widgetLayout="@layout/custom_checkbox"
         android:key="pref_led"
         android:title="@string/pref_led"
         android:summary="@string/pref_led_summ"
-        android:defaultValue="true" />
+        android:defaultValue="true"/>
 
 </PreferenceScreen>

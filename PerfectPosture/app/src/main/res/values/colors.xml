@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="light_main_color">#6582F2</color>
+    <color name="dark_main_color">#210B61</color>
+
+    <color name="medium_main_color">#122D96</color>
+    <color name="medium_secondary_color">#F2E219</color>
+
+    <color name="neutral_main_color">#697296</color>
+    <color name="light_secondary_color">#FCF7B0</color>
+    <color name="very_light_secondary_color">#fffffadf</color>
+
+    
+    <color name="chart_green">#FF006600</color>
+    <color name="chart_red">#FFB22222</color>
+</resources>

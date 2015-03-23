@@ -12,7 +12,7 @@
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/PerfectPostureActionBarTheme" >
         <meta-data android:name="AA_DB_NAME" android:value="Pickrand.db" /> <!-- ActiveAndroid -->
         <meta-data android:name="AA_DB_VERSION" android:value="5" /> <!-- ActiveAndroid -->
         <meta-data android:name="AA_MODELS"
@@ -25,7 +25,7 @@
         <activity
             android:name=".PerfectPostureActivity"
             android:label="@string/app_name"
-            android:theme="@style/android:Theme.Holo.Light.DarkActionBar">
+            android:theme="@style/PerfectPostureActionBarTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
