@@ -6,7 +6,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Fragment;
@@ -20,6 +19,7 @@ import android.widget.Button;
 import com.activeandroid.query.Delete;
 import com.activeandroid.query.Select;
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.LimitLine;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
@@ -37,8 +37,6 @@ import com.github.mikephil.charting.data.LineDataSet;
 public class GraphFragment extends Fragment {
     private static final String TAG = "com.brucegiese.graph";
     private static final int DATA_POINTS_TO_SHOW = 100;
-    private static final int DARK_GREEN = 0xFF006600;
-    private static final int DARK_RED = 0xFFB22222;
 
     private LineChart mLineChart;
     private int mIndex;
@@ -75,13 +73,14 @@ public class GraphFragment extends Fragment {
         *       Set up the chart
          */
         mLineChart = (LineChart) v.findViewById(R.id.chart);
-
-        mLineChart.setBackgroundColor(0xFF122D96);
+        mLineChart.setBackgroundColor(getResources().getColor(R.color.neutral_main_color));
         mLineChart.setDescription("");
         mLineChart.setNoDataText(getString(R.string.no_chart_data));
         mLineChart.setDrawGridBackground(true);
-        mLineChart.setGridBackgroundColor(Color.LTGRAY);
+        mLineChart.setGridBackgroundColor(getResources().getColor(R.color.chart_background));
         mLineChart.setDrawBorders(false);
+
+
 
         /*
         *       Y-Axis stuff
@@ -90,6 +89,7 @@ public class GraphFragment extends Fragment {
         yAxisRight.setEnabled(false);
 
         YAxis yAxis = mLineChart.getAxisLeft();
+        yAxis.setTextColor(getResources().getColor(R.color.light_secondary_color));
         yAxis.setEnabled(true);
         yAxis.setDrawAxisLine(true);
         yAxis.setDrawGridLines(true);
@@ -103,27 +103,27 @@ public class GraphFragment extends Fragment {
         yAxis.setSpaceBottom(0.0f);    // leave this much percent space below min value
 
         LimitLine upperLimit = new LimitLine(20.0f, getString(R.string.max_forward_tilt));
-        upperLimit.setLineColor(DARK_RED);
+        upperLimit.setLineColor(getResources().getColor(R.color.chart_red));
         upperLimit.setLineWidth(2f);
-        upperLimit.setTextColor(DARK_RED);
+        upperLimit.setTextColor(getResources().getColor(R.color.chart_red));
         upperLimit.setTextSize(10f);
         upperLimit.enableDashedLine(10, 10, 0);
         upperLimit.setLabelPosition(LimitLine.LimitLabelPosition.POS_LEFT);
 
         yAxis.addLimitLine(upperLimit);
         LimitLine lowerLimit = new LimitLine(-20.0f, getString(R.string.max_backward_tilt));
-        lowerLimit.setLineColor(DARK_RED);
+        lowerLimit.setLineColor(getResources().getColor(R.color.chart_red));
         lowerLimit.setLineWidth(2f);
-        lowerLimit.setTextColor(DARK_RED);
+        lowerLimit.setTextColor(getResources().getColor(R.color.chart_red));
         lowerLimit.setTextSize(10f);
         lowerLimit.enableDashedLine(10, 10, 0);
         lowerLimit.setLabelPosition(LimitLine.LimitLabelPosition.POS_LEFT);
         yAxis.addLimitLine(lowerLimit);
 
         LimitLine zeroLimit = new LimitLine(0f, getString(R.string.best_posture));
-        zeroLimit.setLineColor(DARK_GREEN);
+        zeroLimit.setLineColor(getResources().getColor(R.color.chart_green));
         zeroLimit.setLineWidth(2f);
-        zeroLimit.setTextColor(DARK_GREEN);
+        zeroLimit.setTextColor(getResources().getColor(R.color.chart_green));
         zeroLimit.setTextSize(10f);
         zeroLimit.enableDashedLine(10, 10, 0);
         zeroLimit.setLabelPosition(LimitLine.LimitLabelPosition.POS_LEFT);
@@ -133,6 +133,7 @@ public class GraphFragment extends Fragment {
         *       X-Axis stuff
          */
         XAxis xAxis = mLineChart.getXAxis();
+        xAxis.setTextColor(getResources().getColor(R.color.light_secondary_color));
         xAxis.setDrawLabels(false);
         xAxis.setEnabled(false);
 
@@ -140,6 +141,13 @@ public class GraphFragment extends Fragment {
         *       Data setup
          */
         setupData();
+
+        /*
+        *       Can't set up legend until the data is set up.
+         */
+        Legend legend = mLineChart.getLegend();
+        legend.setEnabled(false);
+        // When clearing data, the legend disappears and the chart re-sizes, looks odd, so don't use
 
         /*
         *       Chart interactions
@@ -168,15 +176,15 @@ public class GraphFragment extends Fragment {
         mLineDataSet.setCircleSize(2);
         mLineDataSet.setDrawCircleHole(true);
         mLineDataSet.setLineWidth(2);
-        mLineDataSet.setColor(Color.BLACK);
-        mLineDataSet.setCircleColor(Color.BLACK);
+        mLineDataSet.setColor(getResources().getColor(R.color.chart_data_line));
+        mLineDataSet.setCircleColor(getResources().getColor(R.color.chart_data_line));
+        mLineDataSet.setDrawCircleHole(true);
 
         ArrayList<LineDataSet> dataSets = new ArrayList<LineDataSet>();
         dataSets.add(mLineDataSet);
         ArrayList<String> xVals = new ArrayList<String>();
 
         mLineData = new LineData(xVals, dataSets);      // LineData is a subclass of ChartData
-        mLineChart.setGridBackgroundColor(Color.WHITE);
         mLineChart.setVisibleXRange(DATA_POINTS_TO_SHOW);
         mLineChart.setData(mLineData);
 

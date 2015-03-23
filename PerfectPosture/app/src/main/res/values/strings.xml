@@ -21,7 +21,7 @@
     <string name="posture_notification_text">Hold the phone more vertically</string>
 
     <string name="no_chart_data">"Start posture detection to create a chart!"</string>
-    <string name="posture_readings">posture readings"</string>
+    <string name="posture_readings">Posture Readings</string>
     <string name="max_forward_tilt">"max forward tilt"</string>
     <string name="max_backward_tilt">"max backward tilt"</string>
     <string name="best_posture">"best posture"</string>

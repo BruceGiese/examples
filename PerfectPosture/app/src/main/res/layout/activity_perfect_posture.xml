@@ -2,6 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/neutral_main_color"
     android:gravity="center"
     android:orientation="vertical">
 
@@ -16,7 +17,7 @@
             android:id="@+id/pager_tab_strip"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/dark_main_color"
+            android:background="@color/medium_main_color"
             android:layout_gravity="top"
             android:paddingTop="15dp"
             android:paddingBottom="15dp"/>

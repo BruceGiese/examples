@@ -11,7 +11,9 @@
     <color name="light_secondary_color">#FCF7B0</color>
     <color name="very_light_secondary_color">#fffffadf</color>
 
-    
-    <color name="chart_green">#FF006600</color>
-    <color name="chart_red">#FFB22222</color>
+
+    <color name="chart_green">#ff00ff00</color>
+    <color name="chart_red">#ffff0100</color>
+    <color name="chart_data_line">#FCF7B0</color>   <!-- matching light_secondary_color for now -->
+    <color name="chart_background">#ff1d1947</color>
 </resources>

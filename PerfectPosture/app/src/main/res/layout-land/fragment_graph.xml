@@ -3,13 +3,32 @@
              android:layout_width="match_parent"
              android:layout_height="match_parent"
              android:orientation="horizontal"
+             android:background="@color/neutral_main_color"
              tools:context="com.brucegiese.perfectposture.GraphFragment">
 
-    <com.github.mikephil.charting.charts.LineChart
-        android:id="@+id/chart"
+    <LinearLayout
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="3" />
+        android:layout_weight="2"
+        android:orientation="vertical">
+
+        <com.github.mikephil.charting.charts.LineChart
+            android:id="@+id/chart"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/chart_label"
+            android:text="@string/posture_readings"
+            android:textColor="@color/light_secondary_color"
+            android:background="@color/neutral_main_color"
+            android:textSize="18sp"
+            android:layout_width="match_parent"
+            android:gravity="center"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
 
 
     <!-- LinearLayout leaves space for expansion, plus needed for using layout_weights -->
@@ -17,14 +36,16 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
-        android:orientation="horizontal"
+        android:background="@color/neutral_main_color"
+        android:orientation="vertical"
         android:gravity="center">
 
         <Button
             android:id="@+id/clear_data_button"
             android:text="@string/clear_data_button_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            style="@style/PerfectPostureButton"/>
     </LinearLayout>
 
 </LinearLayout>

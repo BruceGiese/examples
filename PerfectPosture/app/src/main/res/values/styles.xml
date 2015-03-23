@@ -9,6 +9,8 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_marginBottom">20dp</item>
         <item name="android:layout_marginTop">20dp</item>
+        <item name="android:layout_marginLeft">15dp</item>
+        <item name="android:layout_marginRight">15dp</item>
         <item name="android:layout_gravity">center</item>
         <item name="android:textColor">@color/medium_secondary_color</item>
         <item name="android:background">@color/medium_main_color</item>
