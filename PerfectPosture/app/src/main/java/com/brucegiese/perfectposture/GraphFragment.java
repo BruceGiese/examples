@@ -89,6 +89,7 @@ public class GraphFragment extends Fragment {
         yAxisRight.setEnabled(false);
 
         YAxis yAxis = mLineChart.getAxisLeft();
+        yAxis.setTextColor(getResources().getColor(R.color.light_secondary_color));
         yAxis.setEnabled(true);
         yAxis.setDrawAxisLine(true);
         yAxis.setDrawGridLines(true);
@@ -132,7 +133,6 @@ public class GraphFragment extends Fragment {
         *       X-Axis stuff
          */
         XAxis xAxis = mLineChart.getXAxis();
-        xAxis.setTextColor(getResources().getColor(R.color.light_secondary_color));
         xAxis.setDrawLabels(false);
         xAxis.setEnabled(false);
 
