@@ -4,9 +4,11 @@
     <!-- The key String names here must match up with the Strings used in onSharedPreferenceChanged -->
     <CheckBoxPreference
         android:widgetLayout="@layout/custom_checkbox"
+        android:theme="@style/PerfectPostureActionBarTheme"
         android:key="pref_notifications"
         android:title="@string/pref_notification"
         android:summary="@string/pref_notification_summ"
+        android:textColor="@color/light_secondary_color"
         android:defaultValue="true"/>
 
     <CheckBoxPreference

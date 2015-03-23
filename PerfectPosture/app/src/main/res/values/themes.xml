@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!-- Changing the color of the text and background in the action bar -->
+
     <style name="PerfectPostureActionBarTheme"
-           parent="@android:style/Theme.Holo.Light.DarkActionBar">
+           parent="@android:style/Theme.Holo">
         <item name="android:actionBarStyle">@style/PerfectPostureActionBar</item>
         <item name="android:actionBarTabTextStyle">@style/PerfectPostureActionBarTabText</item>
         <item name="android:actionMenuTextColor">@color/medium_secondary_color</item>
+        <item name="android:textAppearanceMedium">@style/PerfectPostureTextAppearanceMed</item>
+        <item name="android:textAppearanceLarge">@style/PerfectPostureTextAppearanceLarge</item>
+        <item name="android:textAppearanceSmall">@style/PerfectPostureTextAppearanceSmall</item>
+        <item name="android:textColorPrimary">@color/light_secondary_color</item>
+        <item name="android:textColorSecondary">@color/very_light_secondary_color</item>
     </style>
 
     <style name="PerfectPostureActionBar"
@@ -25,5 +32,19 @@
         <item name="android:textColor">@color/medium_secondary_color</item>
     </style>
 
+    <!-- Changing color of the settings in the PreferenceFragment -->
+    <style name="PerfectPostureTextAppearanceMed"
+           parent="@android:style/TextAppearance.Medium">
+        <item name="android:textColor">@color/light_secondary_color</item>
+    </style>
+    <!-- Make these colors ridiculous so it's obvious if there's an error -->
+    <style name="PerfectPostureTextAppearanceLarge"
+           parent="@android:style/TextAppearance.Large">
+        <item name="android:textColor">@color/chart_green</item>
+    </style>
+    <style name="PerfectPostureTextAppearanceSmall"
+           parent="@android:style/TextAppearance.Small">
+        <item name="android:textColor">@color/chart_red</item>
+    </style>
 
 </resources>
