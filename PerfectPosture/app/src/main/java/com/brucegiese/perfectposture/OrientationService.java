@@ -358,7 +358,7 @@ public class OrientationService extends Service {
                     title = SERVICE_NOTIFICATION_TITLE;
                     text = getResources().getString(R.string.service_notification_text);
                     id = SERVICE_NOTIFICATION_ID;
-                    icon = R.drawable.ic_posture;
+                    icon = R.drawable.ic_posture_notif;
                     break;
 
 
@@ -366,7 +366,7 @@ public class OrientationService extends Service {
                     title = POSTURE_NOTIFICATION_TITLE;
                     text = getResources().getString(R.string.posture_notification_text);
                     id = POSTURE_NOTIFICATION_ID;
-                    icon = R.drawable.ic_posture;
+                    icon = R.drawable.ic_posture_notif;
                     break;
 
                 default:
