@@ -5,7 +5,7 @@
     <CheckBoxPreference
         android:widgetLayout="@layout/custom_checkbox"
         android:theme="@style/PerfectPostureActionBarTheme"
-        android:key="pref_notifications"
+        android:key="@string/pref_notification"
         android:title="@string/pref_notification"
         android:summary="@string/pref_notification_summ"
         android:textColor="@color/light_secondary_color"
@@ -13,21 +13,21 @@
 
     <CheckBoxPreference
         android:widgetLayout="@layout/custom_checkbox"
-        android:key="pref_vibrate"
+        android:key="@string/pref_vibrate"
         android:title="@string/pref_vibrate"
         android:summary="@string/pref_vibrate_summ"
         android:defaultValue="true"/>
 
     <CheckBoxPreference
         android:widgetLayout="@layout/custom_checkbox"
-        android:key="pref_led"
+        android:key="@string/pref_led"
         android:title="@string/pref_led"
         android:summary="@string/pref_led_summ"
         android:defaultValue="true"/>
 
     <CheckBoxPreference
         android:widgetLayout="@layout/custom_checkbox"
-        android:key="pref_chin_tuck"
+        android:key="@string/pref_chin_tuck"
         android:title="@string/pref_chin_tuck"
         android:summary="@string/pref_chin_tuck_summ"
         android:defaultValue="true"/>

@@ -3,13 +3,17 @@ package com.brucegiese.perfectposture;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Fragment;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,6 +29,7 @@ public class TiltFragment extends Fragment {
     private boolean mButtonState = false;
     private Messenger mService;         // messenger for communicating to OrientationService
     private boolean mServiceConnected = false;
+    private CheckStatusReceiver mCheckStatusReceiver;
 
 
     public TiltFragment() { }
@@ -40,6 +45,7 @@ public class TiltFragment extends Fragment {
         getActivity().startService(intent);
         getActivity().bindService(new Intent(getActivity(), OrientationService.class),
                     mConnection, Activity.BIND_AUTO_CREATE);
+        mCheckStatusReceiver = new CheckStatusReceiver();
     }
 
     @Override
@@ -67,13 +73,19 @@ public class TiltFragment extends Fragment {
                 }
             }
         });
+
+        // Register the broadcast receiver
+        IntentFilter iFilter = new IntentFilter();
+        iFilter.addAction(OrientationService.CHECK_STATUS_INTENT);
+        LocalBroadcastManager.getInstance(getActivity())
+                .registerReceiver(mCheckStatusReceiver, iFilter);
         return mView;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        // In case of multiple instances running.
+        // In case of multiple instances running and other complex scenarios.
         checkAndSetButtonState();
     }
 
@@ -86,8 +98,11 @@ public class TiltFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        mView = null;
 
+        // Un-register the broadcast receiver
+        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mCheckStatusReceiver);
+
+        mView = null;
     }
 
     @Override
@@ -175,6 +190,25 @@ public class TiltFragment extends Fragment {
             } catch (Exception e) {
                 Log.e(TAG, "Exception trying to send message " + message, e);
             }
+        }
+    }
+
+    /**
+     * The service can be stopped by other means, so it will tell us when that happens.
+     */
+    class CheckStatusReceiver extends BroadcastReceiver {
+
+        public CheckStatusReceiver() { }
+
+        @Override
+        public void onReceive(Context c, Intent i) {
+            if( i.getAction().equals(OrientationService.CHECK_STATUS_INTENT)) {
+                Log.d(TAG, "Rechecking the button state based on a broadcast from the service");
+                checkAndSetButtonState();
+            } else {
+                Log.e(TAG, "Received an unexpected broadcast intent");
+            }
+
         }
     }
 }

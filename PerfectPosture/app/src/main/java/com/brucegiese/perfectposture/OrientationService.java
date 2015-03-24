@@ -37,8 +37,9 @@ public class OrientationService extends Service {
     private static final String TAG = "com.brucegiese.service";
 
     // TODO: Refactor all this stuff!  There's too much stuff in one place.
-    public static final String NEW_DATA_POINT_INTENT = "com.brucegiese.perfectposture.Sample";
+    public static final String NEW_DATA_POINT_INTENT = "com.brucegiese.perfectposture.sample";
     public static final String EXTRA_VALUE = "value";                // Z-axis posture value
+    public static final String CHECK_STATUS_INTENT = "com.brucegiese.perfectposture.check";
     /**
      * Is the service running right now?  We need to effectively create a singleton object
      * with the service.  The OS cooperates by only calling the constructor once, even if there
@@ -85,8 +86,8 @@ public class OrientationService extends Service {
     private boolean mAlertVibration = DEFAULT_ALERT_VIBRATION;
     private boolean DEFAULT_ALERT_LED = false;
     private boolean mAlertLed = DEFAULT_ALERT_LED;
-    private boolean DEFAULT_CHIN_TUCK = true;
-    private boolean mChinTuck = DEFAULT_CHIN_TUCK;
+    private boolean DEFAULT_ALERT_CHIN_TUCK = true;
+    private boolean mChinTuck = DEFAULT_ALERT_CHIN_TUCK;
     private Context mContext;
 
     private Vibrator mVibrator = null;
@@ -101,8 +102,7 @@ public class OrientationService extends Service {
     private static final String SERVICE_NOTIFICATION_TITLE = "serviceNotification";
     private static final String POSTURE_NOTIFICATION_TITLE = "postureNotification";
     private static final String CHIN_TUCK_NOTIFICATION_TITLE = "chinTuckNotification";
-    private static final String TURN_OFF_SERVICE_ACTION = "turnOffService";
-    private static final int TURN_OFF_SERVICE_REQUEST_CODE = 12345;
+    private static final String TURN_OFF_SERVICE_ACTION = "com.brucegiese.perfectposture.serviceoff";
     private NotificationManager mNotificationManager;
     private enum NotificationType {
         SERVICE_RUNNING,
@@ -149,6 +149,24 @@ public class OrientationService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand() called");
+
+        String action = intent.getAction();
+        if( action != null) {
+            switch (action) {
+                case TURN_OFF_SERVICE_ACTION:
+                    Log.d(TAG, "onStartCommand(): turning off the service");
+                    stopChecking();
+                    // Tell the Activity to check its status, which just changed.
+                    Intent bcastIntent = new Intent(CHECK_STATUS_INTENT);
+                    LocalBroadcastManager.getInstance(mContext).sendBroadcast(bcastIntent);
+                    break;
+
+                default:
+                    Log.e(TAG, "onStartCommand(): unexpected action: " + action);
+                    break;
+            }
+        }
+
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -160,6 +178,7 @@ public class OrientationService extends Service {
         public void handleMessage(Message msg) {
             switch( msg.what ) {
 
+                // TODO: Should this be refactored to use onStartCommand????
                 case MSG_START_MONITORING:
                     Log.d(TAG, "handleMessage(): Start monitoring");
                     startChecking();
@@ -326,20 +345,24 @@ public class OrientationService extends Service {
             }
 
             // Chin tuck reminder functionality
-            mChinTuckReminderCounter++;
-            if( mChinTuckReminderState) {
-                // We're currently reminding the user to do a chin tuck exercise
-                if( mChinTuckReminderCounter > CHIN_TUCK_REMINDER_DURATION) {
-                    mChinTuckReminderCounter = 0;
-                    mChinTuckReminderState = false;
-                    sendNotification(NotificationType.CHIN_TUCK_REMINDER, false);
-                }
-            } else {
-                if( mChinTuckReminderCounter > CHIN_TUCK_REMINDER_TIME) {
-                    mChinTuckReminderCounter = 0;
-                    mChinTuckReminderState = true;
-                    sendNotification(NotificationType.CHIN_TUCK_REMINDER, true);
-                    vibrate(true);      // TODO: Vibrate function needs enum for more than 2 types
+            if( mChinTuck) {
+                // If this feature is enabled
+                // Note that the various types of notification may still be disabled.
+                mChinTuckReminderCounter++;
+                if (mChinTuckReminderState) {
+                    // We're currently reminding the user to do a chin tuck exercise
+                    if (mChinTuckReminderCounter > CHIN_TUCK_REMINDER_DURATION) {
+                        mChinTuckReminderCounter = 0;
+                        mChinTuckReminderState = false;
+                        sendNotification(NotificationType.CHIN_TUCK_REMINDER, false);
+                    }
+                } else {
+                    if (mChinTuckReminderCounter > CHIN_TUCK_REMINDER_TIME) {
+                        mChinTuckReminderCounter = 0;
+                        mChinTuckReminderState = true;
+                        sendNotification(NotificationType.CHIN_TUCK_REMINDER, true);
+                        vibrate(true);      // TODO: Vibrate function needs enum for more than 2 types
+                    }
                 }
             }
         }
@@ -440,14 +463,11 @@ public class OrientationService extends Service {
                 // Add an action to open the application
                 mBuilder.addAction(R.drawable.ic_posture, getString(R.string.open_application), pIntent);
 
-                // Add an action to turn off the service
-                Intent turnOffIntent = new Intent();
+                // Add an action to turn off the service (needs to be a broadcast intent)
+                Intent turnOffIntent = new Intent(this,OrientationService.class);
                 turnOffIntent.setAction(TURN_OFF_SERVICE_ACTION);
                 PendingIntent pendingIntentTurnOff =
-                        PendingIntent.getBroadcast(this,
-                                TURN_OFF_SERVICE_REQUEST_CODE,
-                                turnOffIntent,
-                                PendingIntent.FLAG_UPDATE_CURRENT);
+                        PendingIntent.getService(this, 0, turnOffIntent, 0);
                 // ic_action_halt icon is from Opoloo, covered by Attribution-ShareAlike 4.0 license
                 // http://creativecommons.org/licenses/by-sa/4.0/
                 // icons are at http://www.opoloo.com/
@@ -491,6 +511,7 @@ public class OrientationService extends Service {
                 public void onSharedPreferenceChanged(SharedPreferences prefs,
                                                       String key) {
                     setupPreference(key);
+                    Log.d(TAG, "Preference change, key is " + key);
                 }
             };
 
@@ -500,15 +521,19 @@ public class OrientationService extends Service {
 
         if( key.equals(getString(R.string.pref_notification))) {
             mAlertNotification = sharedPrefs.getBoolean(getString(R.string.pref_notification), DEFAULT_ALERT_NOTIFICATION);
+            Log.d(TAG, "Notification is " + mAlertNotification);
 
         } else if( key.equals(getString(R.string.pref_vibrate))) {
             mAlertVibration = sharedPrefs.getBoolean(getString(R.string.pref_vibrate), DEFAULT_ALERT_VIBRATION);
+            Log.d(TAG, "Vibration is " + mAlertVibration);
 
         } else if( key.equals(getString(R.string.pref_led))) {
             mAlertLed = sharedPrefs.getBoolean(getString(R.string.pref_led), DEFAULT_ALERT_LED);
+            Log.d(TAG, "LED is " + mAlertLed);
 
         } else if( key.equals(getString(R.string.pref_chin_tuck))) {
-            mChinTuck = sharedPrefs.getBoolean(getString(R.string.pref_chin_tuck), DEFAULT_ALERT_LED);
+            mChinTuck = sharedPrefs.getBoolean(getString(R.string.pref_chin_tuck), DEFAULT_ALERT_CHIN_TUCK);
+            Log.d(TAG, "Chin Tuck is " + mChinTuck);
         }
 
     }
