@@ -25,4 +25,12 @@
         android:summary="@string/pref_led_summ"
         android:defaultValue="true"/>
 
+    <CheckBoxPreference
+        android:widgetLayout="@layout/custom_checkbox"
+        android:key="pref_chin_tuck"
+        android:title="@string/pref_chin_tuck"
+        android:summary="@string/pref_chin_tuck_summ"
+        android:defaultValue="true"/>
+
+
 </PreferenceScreen>

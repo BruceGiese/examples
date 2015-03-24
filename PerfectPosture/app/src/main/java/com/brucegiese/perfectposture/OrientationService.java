@@ -3,8 +3,10 @@ package com.brucegiese.perfectposture;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.IBinder;
@@ -33,6 +35,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class OrientationService extends Service {
     private static final String TAG = "com.brucegiese.service";
+
+    // TODO: Refactor all this stuff!  There's too much stuff in one place.
     public static final String NEW_DATA_POINT_INTENT = "com.brucegiese.perfectposture.Sample";
     public static final String EXTRA_VALUE = "value";                // Z-axis posture value
     /**
@@ -42,12 +46,6 @@ public class OrientationService extends Service {
      */
     private static boolean sIsRunning = false;
     public static OrientationService sInstance = null;
-
-    /** Warning: These strings MUST match up with the strings in preferences.xml */
-    private static final String PREF_NOTIFICATION = "pref_notifications";
-    private static final String PREF_VIBRATE = "pref_vibrate";
-    private static final String PREF_LED = "pref_led";
-    private static final boolean DEFAULT_CHECKBOX = true;    // default for checkboxes is true
 
     private static final int DEFAULT_Z_AXIS_POS_THRESHOLD = 20;     // units of degrees
     private static final int DEFAULT_Z_AXIS_NEG_THRESHOLD = -20;    // units of degrees
@@ -74,30 +72,44 @@ public class OrientationService extends Service {
 
     private int mUpdateInterval = DEFAULT_UPDATE_INTERVAL;
 
-    private boolean mCurrentPostureGood = true;        // start out assuming good posture
-    private int mHysteresisCounter = 0;
-    private int mBadPostureReminderCounter = 0;
+    private boolean mCurrentPostureGood;
+    private int mHysteresisCounter;
+    private int mBadPostureReminderCounter;
+    private int mChinTuckReminderCounter;
+    private boolean mChinTuckReminderState;
 
     // Configuration settings sent from main activity.
-    private boolean mAlertNotification = DEFAULT_CHECKBOX;
-    private boolean mAlertVibration = DEFAULT_CHECKBOX;
-    private boolean mAlertLed = DEFAULT_CHECKBOX;
+    private boolean DEFAULT_ALERT_NOTIFICATION = true;
+    private boolean mAlertNotification = DEFAULT_ALERT_NOTIFICATION;
+    private boolean DEFAULT_ALERT_VIBRATION = true;
+    private boolean mAlertVibration = DEFAULT_ALERT_VIBRATION;
+    private boolean DEFAULT_ALERT_LED = false;
+    private boolean mAlertLed = DEFAULT_ALERT_LED;
+    private boolean DEFAULT_CHIN_TUCK = true;
+    private boolean mChinTuck = DEFAULT_CHIN_TUCK;
     private Context mContext;
 
     private Vibrator mVibrator = null;
-    private int BAD_POSTURE_VIBRATION_TIME = 800;        // units of milliseconds
-    private int GOOD_POSTURE_VIBRATION_TIME = 30;        // units of milliseconds
+    private int BAD_POSTURE_VIBRATION_TIME = 800;       // units of milliseconds
+    private int GOOD_POSTURE_VIBRATION_TIME = 30;       // units of milliseconds
+//    private int CHIN_TUCK_REMINDER_TIME = 15 *60/DEFAULT_UPDATE_INTERVAL;    // first number is minutes
+    private int CHIN_TUCK_REMINDER_TIME = 10;           // TODO: This is for debugging, use the above definition
+    private int CHIN_TUCK_REMINDER_DURATION = 5;        // how long to leave the notification up
     private static final int SERVICE_NOTIFICATION_ID = 1;
     private static final int POSTURE_NOTIFICATION_ID = 2;
+    private static final int CHIN_TUCK_NOTIFICATION_ID = 3;
     private static final String SERVICE_NOTIFICATION_TITLE = "serviceNotification";
     private static final String POSTURE_NOTIFICATION_TITLE = "postureNotification";
+    private static final String CHIN_TUCK_NOTIFICATION_TITLE = "chinTuckNotification";
     private static final String TURN_OFF_SERVICE_ACTION = "turnOffService";
     private static final int TURN_OFF_SERVICE_REQUEST_CODE = 12345;
     private NotificationManager mNotificationManager;
     private enum NotificationType {
         SERVICE_RUNNING,
-        BAD_POSTURE
+        BAD_POSTURE,
+        CHIN_TUCK_REMINDER
     }
+    private CommandReceiver mCommandReceiver;
 
     public static boolean checkIsRunning() {
         return sIsRunning;
@@ -109,6 +121,7 @@ public class OrientationService extends Service {
             Log.e(TAG, "Our assumption that the OS treats service as a singleton is WRONG!");
         }
         OrientationService.sInstance = this;
+        mCommandReceiver = new CommandReceiver();
     }
 
     @Override
@@ -201,6 +214,11 @@ public class OrientationService extends Service {
      *  when the checking is already running.  Worst case, the results get reset.
      */
     private void startChecking() {
+        mChinTuckReminderCounter = 0;
+        mCurrentPostureGood = true;     // start out assuming good posture
+        mHysteresisCounter = 0;
+        mBadPostureReminderCounter = 0;
+
         try {
             mOrientation.startOrienting();
             // This object is essentially a singleton
@@ -222,6 +240,12 @@ public class OrientationService extends Service {
         } catch (Exception e) {
             Log.e(TAG, "Exception when starting orientation and scheduler: ", e);
         }
+
+        // Register the broadcast receiver
+        IntentFilter iFilter = new IntentFilter();
+        iFilter.addAction(TURN_OFF_SERVICE_ACTION);
+        LocalBroadcastManager.getInstance(this)
+                .registerReceiver(mCommandReceiver, iFilter);
     }
 
     /**
@@ -231,6 +255,7 @@ public class OrientationService extends Service {
     private void stopChecking() {
         // remove any bad posture notifications
         sendNotification(NotificationType.BAD_POSTURE, false);
+        sendNotification(NotificationType.CHIN_TUCK_REMINDER, false);
 
         OrientationService.sIsRunning = false;
         if( mScheduledFuture != null) {
@@ -240,6 +265,9 @@ public class OrientationService extends Service {
         } else {
             Log.e(TAG, "stopChecking() was called when checking wasn't running.");
         }
+
+        // Un-register the broadcast receiver
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mCommandReceiver);
     }
 
 
@@ -294,6 +322,24 @@ public class OrientationService extends Service {
                         mBadPostureReminderCounter = 0;
                         badPostureAlerts();     // Send a reminder
                     }
+                }
+            }
+
+            // Chin tuck reminder functionality
+            mChinTuckReminderCounter++;
+            if( mChinTuckReminderState) {
+                // We're currently reminding the user to do a chin tuck exercise
+                if( mChinTuckReminderCounter > CHIN_TUCK_REMINDER_DURATION) {
+                    mChinTuckReminderCounter = 0;
+                    mChinTuckReminderState = false;
+                    sendNotification(NotificationType.CHIN_TUCK_REMINDER, false);
+                }
+            } else {
+                if( mChinTuckReminderCounter > CHIN_TUCK_REMINDER_TIME) {
+                    mChinTuckReminderCounter = 0;
+                    mChinTuckReminderState = true;
+                    sendNotification(NotificationType.CHIN_TUCK_REMINDER, true);
+                    vibrate(true);      // TODO: Vibrate function needs enum for more than 2 types
                 }
             }
         }
@@ -369,6 +415,13 @@ public class OrientationService extends Service {
                     icon = R.drawable.ic_posture_notif;
                     break;
 
+                case CHIN_TUCK_REMINDER:
+                    title = CHIN_TUCK_NOTIFICATION_TITLE;
+                    text = getResources().getString(R.string.chin_tuck_notification_text);
+                    id = CHIN_TUCK_NOTIFICATION_ID;
+                    icon = R.drawable.ic_chin_tuck_notif;
+                    break;
+
                 default:
                     Log.e(TAG, "Unknown type given to sendNotification");
                     return;
@@ -376,14 +429,16 @@ public class OrientationService extends Service {
             }
 
             if (send) {
+
                 Intent resultIntent = new Intent(this, PerfectPostureActivity.class);
                 PendingIntent pIntent = PendingIntent.getActivity(this, 0, resultIntent, 0);
                 NotificationCompat.Builder mBuilder =
                         new NotificationCompat.Builder(this)
                                 .setSmallIcon(icon)
-                                .setContentIntent(pIntent)
                                 .setContentTitle(title)
                                 .setContentText(text);
+                // Add an action to open the application
+                mBuilder.addAction(R.drawable.ic_posture, getString(R.string.open_application), pIntent);
 
                 // Add an action to turn off the service
                 Intent turnOffIntent = new Intent();
@@ -393,8 +448,10 @@ public class OrientationService extends Service {
                                 TURN_OFF_SERVICE_REQUEST_CODE,
                                 turnOffIntent,
                                 PendingIntent.FLAG_UPDATE_CURRENT);
-                // TODO: Need to handle turning off the service from the notification (see statement below)
-                mBuilder.addAction(R.drawable.ic_posture, getString(R.string.turn_off_service), pendingIntentTurnOff);
+                // ic_action_halt icon is from Opoloo, covered by Attribution-ShareAlike 4.0 license
+                // http://creativecommons.org/licenses/by-sa/4.0/
+                // icons are at http://www.opoloo.com/
+                mBuilder.addAction(R.drawable.ic_action_halt, getString(R.string.turn_off_service), pendingIntentTurnOff);
 
                 mNotificationManager.notify(id, mBuilder.build());
 
@@ -440,19 +497,20 @@ public class OrientationService extends Service {
     private void setupPreference(String key) {
         SharedPreferences sharedPrefs =
                 PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        switch( key ) {
-            case PREF_NOTIFICATION:
-                mAlertNotification = sharedPrefs.getBoolean(PREF_NOTIFICATION, DEFAULT_CHECKBOX);
-                break;
 
-            case PREF_VIBRATE:
-                mAlertVibration = sharedPrefs.getBoolean(PREF_VIBRATE, DEFAULT_CHECKBOX);
-                break;
+        if( key.equals(getString(R.string.pref_notification))) {
+            mAlertNotification = sharedPrefs.getBoolean(getString(R.string.pref_notification), DEFAULT_ALERT_NOTIFICATION);
 
-            case PREF_LED:
-                mAlertLed = sharedPrefs.getBoolean(PREF_LED, DEFAULT_CHECKBOX);
-                break;
+        } else if( key.equals(getString(R.string.pref_vibrate))) {
+            mAlertVibration = sharedPrefs.getBoolean(getString(R.string.pref_vibrate), DEFAULT_ALERT_VIBRATION);
+
+        } else if( key.equals(getString(R.string.pref_led))) {
+            mAlertLed = sharedPrefs.getBoolean(getString(R.string.pref_led), DEFAULT_ALERT_LED);
+
+        } else if( key.equals(getString(R.string.pref_chin_tuck))) {
+            mChinTuck = sharedPrefs.getBoolean(getString(R.string.pref_chin_tuck), DEFAULT_ALERT_LED);
         }
+
     }
 
     /**
@@ -461,8 +519,27 @@ public class OrientationService extends Service {
     private void loadSharedPreferences() {
         // the getAll() method isn't going to work with the support library ArrayMap.
         // so just grab each value one-by-one.
-        setupPreference(PREF_NOTIFICATION);
-        setupPreference(PREF_VIBRATE);
-        setupPreference(PREF_LED);
+        setupPreference(getString(R.string.pref_notification));
+        setupPreference(getString(R.string.pref_vibrate));
+        setupPreference(getString(R.string.pref_led));
+        setupPreference(getString(R.string.pref_chin_tuck));
+    }
+
+
+    /**
+     * Receive intents telling us to stop the service (these are actions within notifications)
+     */
+    class CommandReceiver extends BroadcastReceiver {
+        public CommandReceiver() { }
+
+        @Override
+        public void onReceive(Context c, Intent i) {
+            if( i.getAction().equals(TURN_OFF_SERVICE_ACTION)) {
+                Log.d(TAG, "received an Intent telling us to stop the service");
+                stopChecking();
+            } else {
+                Log.e(TAG, "Received an unexpected broadcast intent");
+            }
+        }
     }
 }

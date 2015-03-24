@@ -10,15 +10,19 @@
     <string name="pref_notification_summ">Send notification icons to the top of the screen to alert bad posture</string>
     <string name="pref_led">LED Alerts</string>
     <string name="pref_led_summ">Turn on/off LED to alert bad posture (not implemented yet)</string>
+    <string name="pref_chin_tuck">Chin Tuck Reminders</string>
+    <string name="pref_chin_tuck_summ">Get an alert every 15 minutes to do a chin tuck exercise</string>
     <string name="reset_posture_data">Reset Posture Data</string>
 
     <string name="start_tilt_detection">Start Posture Detection</string>
     <string name="stop_tilt_detection">Stop Posture Detection</string>
-    <string name="turn_off_service">Turn off service</string>
     <string name="no_gravity_sensor">No gravity sensor was detected, sorry.</string>
     <string name="no_service">Gravity service is not currently available</string>
     <string name="service_notification_text">PerfectPosture service is running</string>
     <string name="posture_notification_text">Hold the phone more vertically</string>
+    <string name="chin_tuck_notification_text">Time for a chin tuck exercise</string>
+    <string name="turn_off_service">Turn off service</string>
+    <string name="open_application">Open the application</string>
 
     <string name="no_chart_data">"Start posture detection to create a chart!"</string>
     <string name="posture_readings">Posture Readings</string>
