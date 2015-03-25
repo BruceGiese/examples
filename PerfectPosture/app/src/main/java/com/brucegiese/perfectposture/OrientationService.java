@@ -36,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 public class OrientationService extends Service {
     private static final String TAG = "com.brucegiese.service";
 
-    // TODO: Refactor all this stuff!  There's too much stuff in one place.
     public static final String NEW_DATA_POINT_INTENT = "com.brucegiese.perfectposture.sample";
     public static final String EXTRA_VALUE = "value";                // Z-axis posture value
     public static final String CHECK_STATUS_INTENT = "com.brucegiese.perfectposture.check";
@@ -45,7 +44,7 @@ public class OrientationService extends Service {
      * with the service.  The OS cooperates by only calling the constructor once, even if there
      * are multiple calls to startService().
      */
-    private static boolean sIsRunning = false;
+    public static boolean sIsRunning = false;
     public static OrientationService sInstance = null;
 
     private static final int DEFAULT_Z_AXIS_POS_THRESHOLD = 20;     // units of degrees
@@ -63,10 +62,6 @@ public class OrientationService extends Service {
     private static final int DEFAULT_BAD_REMINDER_THRESHOLD = 10;
     int mBadPostureReminderCountThreshold = DEFAULT_BAD_REMINDER_THRESHOLD;
     private static final int DEFAULT_UPDATE_INTERVAL = 1;           // units of seconds
-
-    // Messaging from whoever is running this service.
-    public static final int MSG_START_MONITORING = 1;
-    public static final int MSG_STOP_MONITORING = 2;
 
     private Orientation mOrientation = null;
     private ScheduledFuture mScheduledFuture;
@@ -91,8 +86,8 @@ public class OrientationService extends Service {
     private Context mContext;
 
     private Vibrator mVibrator = null;
-    private int BAD_POSTURE_VIBRATION_TIME = 800;       // units of milliseconds
-    private int GOOD_POSTURE_VIBRATION_TIME = 30;       // units of milliseconds
+    private int LONG_VIBRATION_TIME = 800;              // units of milliseconds
+    private int SHORT_VIBRATION_TIME = 30;              // units of milliseconds
 //    private int CHIN_TUCK_REMINDER_TIME = 15 *60/DEFAULT_UPDATE_INTERVAL;    // first number is minutes
     private int CHIN_TUCK_REMINDER_TIME = 10;           // TODO: This is for debugging, use the above definition
     private int CHIN_TUCK_REMINDER_DURATION = 5;        // how long to leave the notification up
@@ -102,7 +97,8 @@ public class OrientationService extends Service {
     private static final String SERVICE_NOTIFICATION_TITLE = "serviceNotification";
     private static final String POSTURE_NOTIFICATION_TITLE = "postureNotification";
     private static final String CHIN_TUCK_NOTIFICATION_TITLE = "chinTuckNotification";
-    private static final String TURN_OFF_SERVICE_ACTION = "com.brucegiese.perfectposture.serviceoff";
+    public static final String TURN_ON_SERVICE_ACTION = "com.brucegiese.perfectposture.serviceon";
+    public static final String TURN_OFF_SERVICE_ACTION = "com.brucegiese.perfectposture.serviceoff";
     private NotificationManager mNotificationManager;
     private enum NotificationType {
         SERVICE_RUNNING,
@@ -110,11 +106,6 @@ public class OrientationService extends Service {
         CHIN_TUCK_REMINDER
     }
     private CommandReceiver mCommandReceiver;
-
-    public static boolean checkIsRunning() {
-        return sIsRunning;
-    }
-
 
     public OrientationService() {
         if( OrientationService.sInstance != null ) {
@@ -136,77 +127,55 @@ public class OrientationService extends Service {
 
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-        loadSharedPreferences();        // read the existing shared preferences
+        loadSharedPreferences();
         SharedPreferences mPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         mPrefs.registerOnSharedPreferenceChangeListener(prefListener);      // listen for changes
 
         mContext = this;        // needed by Runnable below
     }
 
-    /*
-     * This gets called when the messaging service starts up.
-     */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand() called");
 
-        String action = intent.getAction();
-        if( action != null) {
-            switch (action) {
+        if( intent.getAction() != null) {
+            switch( intent.getAction()) {
                 case TURN_OFF_SERVICE_ACTION:
                     Log.d(TAG, "onStartCommand(): turning off the service");
                     stopChecking();
-                    // Tell the Activity to check its status, which just changed.
+                    // Tell the Activity to check its status because this might be sent...
+                    // ...by a notification, so the Activity might not know about it.
                     Intent bcastIntent = new Intent(CHECK_STATUS_INTENT);
                     LocalBroadcastManager.getInstance(mContext).sendBroadcast(bcastIntent);
+                    stopSelf();     // Completely shut down the service
+                    break;
+
+                case TURN_ON_SERVICE_ACTION:
+                    Log.d(TAG, "onStartCommand(): turning on the service");
+                    startChecking();
                     break;
 
                 default:
-                    Log.e(TAG, "onStartCommand(): unexpected action: " + action);
+                    Log.e(TAG, "onStartCommand(): unexpected action: " + intent.getAction());
                     break;
             }
+        } else {
+            Log.e(TAG, "Someone started the service without an action, we ignored it");
         }
 
         return super.onStartCommand(intent, flags, startId);
     }
 
-    /**
-     * Target we publish for the client to send messages to Handler
-     */
-    final Messenger fromClientMessenger = new Messenger( new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch( msg.what ) {
-
-                // TODO: Should this be refactored to use onStartCommand????
-                case MSG_START_MONITORING:
-                    Log.d(TAG, "handleMessage(): Start monitoring");
-                    startChecking();
-                    break;
-
-                case MSG_STOP_MONITORING:
-                    Log.d(TAG, "handleMessage(): Stop monitoring");
-                    stopChecking();
-                    break;
-
-                default:
-                    super.handleMessage(msg);
-            }
-        }
-
-    });
-
     @Override
     public IBinder onBind(Intent intent) {
-        return fromClientMessenger.getBinder();
+        // We don't use binding, just start the service with an action.
+        return null;
     }
 
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        // Make absolutely sure that we've stopped everything and cleaned up.
-        // This is guaranteed to be the last thing called.
         if( mScheduledFuture != null ) {
             Log.i(TAG, "onDestroy(): mScheduledFuture was not already null");
             mScheduledFuture.cancel(true);
@@ -223,14 +192,13 @@ public class OrientationService extends Service {
         mNotificationManager.cancel(SERVICE_NOTIFICATION_ID);
         // This object is a de-facto singleton
         OrientationService.sIsRunning = false;
-        OrientationService.sInstance = null;        // The OS will destroy the object now.
+        OrientationService.sInstance = null;
     }
 
 
 
     /**
-     *  For robustness purposes, this should be able to handle being called
-     *  when the checking is already running.  Worst case, the results get reset.
+     *  Start monitoring the user's posture.
      */
     private void startChecking() {
         mChinTuckReminderCounter = 0;
@@ -240,7 +208,6 @@ public class OrientationService extends Service {
 
         try {
             mOrientation.startOrienting();
-            // This object is essentially a singleton
             OrientationService.sIsRunning = true;
 
             if (mScheduledFuture == null) {
@@ -268,11 +235,10 @@ public class OrientationService extends Service {
     }
 
     /**
-     *  For robustness purposes, this should be able to handle being called
-     *  when the checking has already been stopped.
+     *  Stop monitoring the user's posture.
      */
     private void stopChecking() {
-        // remove any bad posture notifications
+        // remove any existing notifications
         sendNotification(NotificationType.BAD_POSTURE, false);
         sendNotification(NotificationType.CHIN_TUCK_REMINDER, false);
 
@@ -292,7 +258,6 @@ public class OrientationService extends Service {
 
     /**
      * This runs periodically in the background (yet another thread).
-     * NOTE: This does NOT run on the same thread as the handleXXX stuff above!
      */
     Runnable mDoPeriodicWork = new Runnable() {   // must be executed in the UI thread
         @Override
@@ -309,14 +274,12 @@ public class OrientationService extends Service {
             // Don't bother adding the date or goodPosture value
             LocalBroadcastManager.getInstance(mContext).sendBroadcast(bcastIntent);
 
-
-            // TODO: move this code into a separate object.
             //       Apply hysteresis to determine when to alert the user.
-            if( measurePosture(z) ) {        // Good posture
+            if( measurePosture(z) ) {                   // Good posture
                 if( ! mCurrentPostureGood ) {
                     mHysteresisCounter++;
                     if( mHysteresisCounter >= POSITIVE_HYSTERESIS ) {
-                        mCurrentPostureGood = true;
+                        mCurrentPostureGood = true;     // posture has been good for long enough
                         mHysteresisCounter = 0;
                         goodPostureAlerts();
                     }
@@ -324,11 +287,11 @@ public class OrientationService extends Service {
                     mHysteresisCounter = 0;
                 }
 
-            } else {                                // Bad posture
+            } else {                                    // Bad posture
                 if( mCurrentPostureGood) {
                     mHysteresisCounter++;
                     if( mHysteresisCounter >= NEGATIVE_HYSTERESIS ) {
-                        mCurrentPostureGood = false;
+                        mCurrentPostureGood = false;    // posture has been bad for too long
                         mHysteresisCounter = 0;
                         badPostureAlerts();
                         mBadPostureReminderCounter = 0;
@@ -336,32 +299,32 @@ public class OrientationService extends Service {
                 } else {
                     mHysteresisCounter = 0;
 
+                    // If posture stays bad for too long, remind the user
                     mBadPostureReminderCounter++;
                     if( mBadPostureReminderCounter >= mBadPostureReminderCountThreshold) {
                         mBadPostureReminderCounter = 0;
-                        badPostureAlerts();     // Send a reminder
+                        badPostureAlerts();
                     }
                 }
             }
 
             // Chin tuck reminder functionality
-            if( mChinTuck) {
-                // If this feature is enabled
+            if( mChinTuck) {        // if the functionality is enabled
                 // Note that the various types of notification may still be disabled.
                 mChinTuckReminderCounter++;
-                if (mChinTuckReminderState) {
-                    // We're currently reminding the user to do a chin tuck exercise
-                    if (mChinTuckReminderCounter > CHIN_TUCK_REMINDER_DURATION) {
-                        mChinTuckReminderCounter = 0;
-                        mChinTuckReminderState = false;
-                        sendNotification(NotificationType.CHIN_TUCK_REMINDER, false);
-                    }
-                } else {
+                if ( !mChinTuckReminderState)  {
+                    // We're not currently reminding the user to do a chin tuck exercise
                     if (mChinTuckReminderCounter > CHIN_TUCK_REMINDER_TIME) {
                         mChinTuckReminderCounter = 0;
                         mChinTuckReminderState = true;
                         sendNotification(NotificationType.CHIN_TUCK_REMINDER, true);
-                        vibrate(true);      // TODO: Vibrate function needs enum for more than 2 types
+                        vibrate(true);
+                    }
+                } else {
+                    if (mChinTuckReminderCounter > CHIN_TUCK_REMINDER_DURATION) {
+                        mChinTuckReminderCounter = 0;
+                        mChinTuckReminderState = false;
+                        sendNotification(NotificationType.CHIN_TUCK_REMINDER, false);
                     }
                 }
             }
@@ -369,7 +332,7 @@ public class OrientationService extends Service {
     };
 
     /**
-     * Determine whether it is good posture or bad posture.
+     * Determine whether the user currently has good posture or bad posture.
      * @param angle  angle of device Z-axis from the vertical
      * @return  true if good posture
      */
@@ -382,12 +345,11 @@ public class OrientationService extends Service {
      */
     private void badPostureAlerts() {
         PowerManager pm = (PowerManager)getSystemService(POWER_SERVICE);
+        // Only send out alerts if the screen is active.
         if( pm.isScreenOn() ) {     // This was deprecated in API level 20
             Log.d(TAG, "Posture is bad!");
             vibrate(true);
             sendNotification(NotificationType.BAD_POSTURE, true);
-        } else {
-            Log.d(TAG, "badPostureAlerts(): Screen is not interactive right now");
         }
     }
 
@@ -396,14 +358,12 @@ public class OrientationService extends Service {
      */
     private void goodPostureAlerts() {
         PowerManager pm = (PowerManager)getSystemService(POWER_SERVICE);
+        // Only send out alerts if the screen is active.
         if( pm.isScreenOn() ) {     // This was deprecated in API level 20
             Log.d(TAG, "Posture just got good!");
             vibrate(false);
             sendNotification(NotificationType.BAD_POSTURE, false);
-        } else {
-            Log.d(TAG, "goodPostureAlerts(): Screen is not interactive right now");
         }
-
     }
 
     /**
@@ -460,7 +420,7 @@ public class OrientationService extends Service {
                                 .setSmallIcon(icon)
                                 .setContentTitle(title)
                                 .setContentText(text);
-                // Add an action to open the application
+                // Add an action allowing the user to open the application
                 mBuilder.addAction(R.drawable.ic_posture, getString(R.string.open_application), pIntent);
 
                 // Add an action to turn off the service (needs to be a broadcast intent)
@@ -476,6 +436,7 @@ public class OrientationService extends Service {
                 mNotificationManager.notify(id, mBuilder.build());
 
             } else {
+                // remove the notification
                 mNotificationManager.cancel(id);
             }
         }
@@ -484,13 +445,13 @@ public class OrientationService extends Service {
     /**
      * Vibrate the device to signal a good or bad posture, subject to user config settings.
      *
-     * @param badPosture if true, this is a bad posture signal.  False sends a good posture signal.
+     * @param longInterval if true, long vibration, otherwise short vibration time
      */
-    private void vibrate( boolean badPosture ) {
+    private void vibrate( boolean longInterval ) {
         if( mAlertVibration ) {
-            int vibrationTime = GOOD_POSTURE_VIBRATION_TIME;
-            if (badPosture) {
-                vibrationTime = BAD_POSTURE_VIBRATION_TIME;
+            int vibrationTime = SHORT_VIBRATION_TIME;
+            if (longInterval) {
+                vibrationTime = LONG_VIBRATION_TIME;
             }
 
             if (mVibrator != null) {
@@ -508,10 +469,8 @@ public class OrientationService extends Service {
      */
     SharedPreferences.OnSharedPreferenceChangeListener prefListener =
             new SharedPreferences.OnSharedPreferenceChangeListener() {
-                public void onSharedPreferenceChanged(SharedPreferences prefs,
-                                                      String key) {
+                public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
                     setupPreference(key);
-                    Log.d(TAG, "Preference change, key is " + key);
                 }
             };
 
@@ -521,19 +480,25 @@ public class OrientationService extends Service {
 
         if( key.equals(getString(R.string.pref_notification))) {
             mAlertNotification = sharedPrefs.getBoolean(getString(R.string.pref_notification), DEFAULT_ALERT_NOTIFICATION);
-            Log.d(TAG, "Notification is " + mAlertNotification);
+            if( !mAlertNotification ) {
+                // remove all notifications that might be currently displayed
+                sendNotification(NotificationType.CHIN_TUCK_REMINDER, false);
+                sendNotification(NotificationType.BAD_POSTURE, false);
+//                sendNotification(NotificationType.SERVICE_RUNNING, false);
+            }
 
         } else if( key.equals(getString(R.string.pref_vibrate))) {
             mAlertVibration = sharedPrefs.getBoolean(getString(R.string.pref_vibrate), DEFAULT_ALERT_VIBRATION);
-            Log.d(TAG, "Vibration is " + mAlertVibration);
 
         } else if( key.equals(getString(R.string.pref_led))) {
             mAlertLed = sharedPrefs.getBoolean(getString(R.string.pref_led), DEFAULT_ALERT_LED);
-            Log.d(TAG, "LED is " + mAlertLed);
 
         } else if( key.equals(getString(R.string.pref_chin_tuck))) {
             mChinTuck = sharedPrefs.getBoolean(getString(R.string.pref_chin_tuck), DEFAULT_ALERT_CHIN_TUCK);
-            Log.d(TAG, "Chin Tuck is " + mChinTuck);
+            if( !mChinTuck ) {
+                // remove any chin tuck notification that might be currently displayed
+                sendNotification(NotificationType.CHIN_TUCK_REMINDER, false);
+            }
         }
 
     }
