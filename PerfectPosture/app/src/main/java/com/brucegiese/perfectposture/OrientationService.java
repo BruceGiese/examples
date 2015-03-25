@@ -306,9 +306,8 @@ public class OrientationService extends Service {
             // Chin tuck reminder functionality
             if( mChinTuck) {        // if the functionality is enabled
                 // Note that the various types of notification may still be disabled.
-                // int CHIN_TUCK_REMINDER_TIME = 15 *60/UPDATE_INTERVAL;    // first number is minutes
-                int CHIN_TUCK_REMINDER_TIME = 10;           // TODO: This is for debugging
-                int CHIN_TUCK_REMINDER_DURATION = 5;        // how long to leave the notification up
+                int CHIN_TUCK_REMINDER_TIME = 15 *60/UPDATE_INTERVAL;    // first number is minutes
+                int CHIN_TUCK_REMINDER_DURATION = 1 *60/UPDATE_INTERVAL; // how long to leave the notification up
                 mChinTuckReminderCounter++;
                 if ( !mChinTuckReminderState)  {
                     // We're not currently reminding the user to do a chin tuck exercise
