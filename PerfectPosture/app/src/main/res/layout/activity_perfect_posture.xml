@@ -2,22 +2,21 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/neutral_main_color"
     android:gravity="center"
     android:orientation="vertical">
 
     <android.support.v4.view.ViewPager
         android:id="@+id/pager"
+        android:background="@color/neutral_main_color"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".PerfectPostureActivity"
-        android:background="@color/neutral_main_color">
+        tools:context=".PerfectPostureActivity">
 
         <android.support.v4.view.PagerTabStrip
             android:id="@+id/pager_tab_strip"
+            android:background="@color/medium_main_color"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/medium_main_color"
             android:layout_gravity="top"
             android:paddingTop="15dp"
             android:paddingBottom="15dp"/>

@@ -15,7 +15,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-
 import com.activeandroid.query.Delete;
 import com.activeandroid.query.Select;
 import com.github.mikephil.charting.charts.LineChart;
@@ -40,10 +39,9 @@ public class GraphFragment extends Fragment {
 
     private LineChart mLineChart;
     private int mIndex;
-    ArrayList<Entry> mPostureSamples;
-    LineData mLineData;
-    LineDataSet mLineDataSet;
-    DataReceiver mDataReceiver;
+    private ArrayList<Entry> mPostureSamples;
+    private LineData mLineData;
+    private DataReceiver mDataReceiver;
     private boolean mChartValid = false;
 
     @Override
@@ -168,6 +166,7 @@ public class GraphFragment extends Fragment {
      * the user clears out the database, for instance.
      */
     private void setupData() {
+        LineDataSet mLineDataSet;
         mIndex = 0;
         mPostureSamples = new ArrayList<Entry>();
         mLineDataSet = new LineDataSet(mPostureSamples, getString(R.string.posture_readings));
@@ -254,8 +253,6 @@ public class GraphFragment extends Fragment {
      * Receive new data points as they're being added to the database.
      */
     class DataReceiver extends BroadcastReceiver {
-
-        public DataReceiver() { }
 
         @Override
         public void onReceive(Context c, Intent i) {

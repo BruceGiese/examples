@@ -16,13 +16,12 @@ import android.hardware.SensorManager;
  * UPDATE: This branch of the code piggybacks other sensors within the Orientation class.
  *
  */
-public class Orientation implements SensorEventListener {
+class Orientation implements SensorEventListener {
     private static final float G_FORCE = 9.78f;         // gravity in meters per second squared
     private static final float SCALE_FACTOR = 90f;      // scale for angular degrees
     private static final float ALMOST_HALF = .4999f;    // need to round up
-    Context mContext;
-    private SensorManager mSensorManager;
-    private Sensor mGravitySensor;
+    private final SensorManager mSensorManager;
+    private final Sensor mGravitySensor;
     private float[] mGravity = null;
 
     // The methods here returns this value if it's not valid
@@ -32,7 +31,6 @@ public class Orientation implements SensorEventListener {
      * @param context  Activity or Application context
      */
     public Orientation(Context context) {
-        mContext = context;
         mSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
 
         // Note that if there is no gravity sensor implemented, then this will return null.

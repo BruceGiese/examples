@@ -3,7 +3,7 @@
              android:layout_width="match_parent"
              android:layout_height="match_parent"
              android:orientation="horizontal"
-             android:background="@color/neutral_main_color"
+             android:baselineAligned="false"
              tools:context="com.brucegiese.perfectposture.GraphFragment">
 
     <LinearLayout
@@ -15,8 +15,7 @@
         <com.github.mikephil.charting.charts.LineChart
             android:id="@+id/chart"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+            android:layout_height="wrap_content"/>
 
         <TextView
             android:id="@+id/chart_label"

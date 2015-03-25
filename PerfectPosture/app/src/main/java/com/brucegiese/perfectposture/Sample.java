@@ -11,7 +11,7 @@ import com.activeandroid.annotation.Table;
 import java.util.Date;
 
 @Table(name="Sample", id= BaseColumns._ID)
-public class Sample extends Model {
+class Sample extends Model {
     @Column(name="Value")
     public int value;
 
@@ -22,11 +22,11 @@ public class Sample extends Model {
 
     // Don't rely on the date as a key, due to time zone changes, daylight savings time changes...
     @Column(name="Date")
-    public Date date;
+    private Date date;
 
     // Whether this data point is considered good posture or bad posture
     @Column(name="GoodPosture")
-    public boolean goodPosture;
+    private boolean goodPosture;
 
     public Sample(int value, Date date, boolean goodPosture) {
         this.value = value;

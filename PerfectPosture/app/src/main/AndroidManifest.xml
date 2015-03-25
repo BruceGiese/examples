@@ -5,7 +5,6 @@
     <uses-permission android:name="permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-sdk android:minSdkVersion="14" />
 
     <!-- android:name definition is for ActiveAndroid -->
     <application android:name="com.activeandroid.app.Application"

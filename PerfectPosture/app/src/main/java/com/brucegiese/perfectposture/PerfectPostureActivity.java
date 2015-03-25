@@ -22,8 +22,8 @@ public class PerfectPostureActivity extends Activity {
     private final static int DATA_PAGE = 1;
     private final static int SETTINGS_PAGE = 2;
     private final static int LAST_PAGE_NUM = SETTINGS_PAGE;
-    SectionsPagerAdapter mSectionsPagerAdapter;
-    ViewPager mViewPager;
+    private SectionsPagerAdapter mSectionsPagerAdapter;
+    private ViewPager mViewPager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

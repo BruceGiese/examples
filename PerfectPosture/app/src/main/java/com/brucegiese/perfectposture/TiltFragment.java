@@ -1,18 +1,11 @@
 package com.brucegiese.perfectposture;
 
-import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.Fragment;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.IBinder;
-import android.os.Message;
-import android.os.Messenger;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -26,8 +19,6 @@ import android.widget.Button;
 public class TiltFragment extends Fragment {
     private static final String TAG = "com.brucegiese.tilt";
     private View mView;
-    private Messenger mService;         // messenger for communicating to OrientationService
-    private boolean mServiceConnected = false;
     private CheckStatusReceiver mCheckStatusReceiver;
 
 
@@ -77,12 +68,6 @@ public class TiltFragment extends Fragment {
         super.onResume();
         // In case of multiple instances running and other complex scenarios.
         checkAndSetButtonState();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-
     }
 
     @Override

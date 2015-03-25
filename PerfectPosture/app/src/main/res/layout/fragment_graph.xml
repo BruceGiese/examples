@@ -3,7 +3,6 @@
              android:layout_width="match_parent"
              android:layout_height="match_parent"
              android:orientation="vertical"
-             android:background="@color/neutral_main_color"
              tools:context="com.brucegiese.perfectposture.GraphFragment">
 
     <com.github.mikephil.charting.charts.LineChart

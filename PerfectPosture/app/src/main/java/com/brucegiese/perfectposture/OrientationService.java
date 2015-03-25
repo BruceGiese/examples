@@ -8,16 +8,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
-import android.os.Messenger;
 import android.os.PowerManager;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+import android.widget.Toast;
+
 import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -45,12 +44,12 @@ public class OrientationService extends Service {
      * are multiple calls to startService().
      */
     public static boolean sIsRunning = false;
-    public static OrientationService sInstance = null;
+    private static OrientationService sInstance = null;
 
     private static final int DEFAULT_Z_AXIS_POS_THRESHOLD = 20;     // units of degrees
     private static final int DEFAULT_Z_AXIS_NEG_THRESHOLD = -20;    // units of degrees
-    private int mZAxisPosThreshold = DEFAULT_Z_AXIS_POS_THRESHOLD;
-    private int mZAxisNegThreshold = DEFAULT_Z_AXIS_NEG_THRESHOLD;
+    private int mZAxisPosThreshold = DEFAULT_Z_AXIS_POS_THRESHOLD;  // sensitivity feature upgrade
+    private int mZAxisNegThreshold = DEFAULT_Z_AXIS_NEG_THRESHOLD;  // sensitivity feature upgrade
 
     /*
     * Number of consecutive good/bad samples before we declare a change in posture.
@@ -60,13 +59,11 @@ public class OrientationService extends Service {
     private static final int NEGATIVE_HYSTERESIS = 8;
     // number of additional consecutive bad posture samples before we issue a reminder
     private static final int DEFAULT_BAD_REMINDER_THRESHOLD = 10;
-    int mBadPostureReminderCountThreshold = DEFAULT_BAD_REMINDER_THRESHOLD;
-    private static final int DEFAULT_UPDATE_INTERVAL = 1;           // units of seconds
+    private int mBadPostureReminderCountThreshold = DEFAULT_BAD_REMINDER_THRESHOLD; // sensitivity feature upgrade
+    private static final int UPDATE_INTERVAL = 1;           // units of seconds
 
     private Orientation mOrientation = null;
     private ScheduledFuture mScheduledFuture;
-
-    private int mUpdateInterval = DEFAULT_UPDATE_INTERVAL;
 
     private boolean mCurrentPostureGood;
     private int mHysteresisCounter;
@@ -75,22 +72,17 @@ public class OrientationService extends Service {
     private boolean mChinTuckReminderState;
 
     // Configuration settings sent from main activity.
-    private boolean DEFAULT_ALERT_NOTIFICATION = true;
+    private final boolean DEFAULT_ALERT_NOTIFICATION = true;
     private boolean mAlertNotification = DEFAULT_ALERT_NOTIFICATION;
-    private boolean DEFAULT_ALERT_VIBRATION = true;
+    private final boolean DEFAULT_ALERT_VIBRATION = true;
     private boolean mAlertVibration = DEFAULT_ALERT_VIBRATION;
-    private boolean DEFAULT_ALERT_LED = false;
+    private final boolean DEFAULT_ALERT_LED = false;
     private boolean mAlertLed = DEFAULT_ALERT_LED;
-    private boolean DEFAULT_ALERT_CHIN_TUCK = true;
+    private final boolean DEFAULT_ALERT_CHIN_TUCK = true;
     private boolean mChinTuck = DEFAULT_ALERT_CHIN_TUCK;
     private Context mContext;
 
     private Vibrator mVibrator = null;
-    private int LONG_VIBRATION_TIME = 800;              // units of milliseconds
-    private int SHORT_VIBRATION_TIME = 30;              // units of milliseconds
-//    private int CHIN_TUCK_REMINDER_TIME = 15 *60/DEFAULT_UPDATE_INTERVAL;    // first number is minutes
-    private int CHIN_TUCK_REMINDER_TIME = 10;           // TODO: This is for debugging, use the above definition
-    private int CHIN_TUCK_REMINDER_DURATION = 5;        // how long to leave the notification up
     private static final int SERVICE_NOTIFICATION_ID = 1;
     private static final int POSTURE_NOTIFICATION_ID = 2;
     private static final int CHIN_TUCK_NOTIFICATION_ID = 3;
@@ -105,7 +97,7 @@ public class OrientationService extends Service {
         BAD_POSTURE,
         CHIN_TUCK_REMINDER
     }
-    private CommandReceiver mCommandReceiver;
+    private final CommandReceiver mCommandReceiver;
 
     public OrientationService() {
         if( OrientationService.sInstance != null ) {
@@ -207,21 +199,24 @@ public class OrientationService extends Service {
         mBadPostureReminderCounter = 0;
 
         try {
-            mOrientation.startOrienting();
-            OrientationService.sIsRunning = true;
+            if(mOrientation.startOrienting() ) {
+                OrientationService.sIsRunning = true;
 
-            if (mScheduledFuture == null) {
-                // We use an additional thread for the periodic execution task.
+                if (mScheduledFuture == null) {
+                    // We use an additional thread for the periodic execution task.
 
-                ScheduledExecutorService mScheduler = Executors.newScheduledThreadPool(1);
-                mScheduledFuture =
-                        mScheduler.scheduleAtFixedRate(
-                                mDoPeriodicWork,
-                                mUpdateInterval,
-                                mUpdateInterval,
-                                TimeUnit.SECONDS);
+                    ScheduledExecutorService mScheduler = Executors.newScheduledThreadPool(1);
+                    mScheduledFuture =
+                            mScheduler.scheduleAtFixedRate(
+                                    mDoPeriodicWork,
+                                    UPDATE_INTERVAL,
+                                    UPDATE_INTERVAL,
+                                    TimeUnit.SECONDS);
+                } else {
+                    Log.e(TAG, "startChecking() was called when checking was already running");
+                }
             } else {
-                Log.e(TAG, "startChecking() was called when checking was already running");
+                Toast.makeText(this, R.string.no_sensors, Toast.LENGTH_LONG).show();
             }
         } catch (Exception e) {
             Log.e(TAG, "Exception when starting orientation and scheduler: ", e);
@@ -259,7 +254,7 @@ public class OrientationService extends Service {
     /**
      * This runs periodically in the background (yet another thread).
      */
-    Runnable mDoPeriodicWork = new Runnable() {   // must be executed in the UI thread
+    private final Runnable mDoPeriodicWork = new Runnable() {   // must be executed in the UI thread
         @Override
         public void run() {
             int z = mOrientation.getZ();
@@ -311,6 +306,9 @@ public class OrientationService extends Service {
             // Chin tuck reminder functionality
             if( mChinTuck) {        // if the functionality is enabled
                 // Note that the various types of notification may still be disabled.
+                // int CHIN_TUCK_REMINDER_TIME = 15 *60/UPDATE_INTERVAL;    // first number is minutes
+                int CHIN_TUCK_REMINDER_TIME = 10;           // TODO: This is for debugging
+                int CHIN_TUCK_REMINDER_DURATION = 5;        // how long to leave the notification up
                 mChinTuckReminderCounter++;
                 if ( !mChinTuckReminderState)  {
                     // We're not currently reminding the user to do a chin tuck exercise
@@ -336,7 +334,7 @@ public class OrientationService extends Service {
      * @param angle  angle of device Z-axis from the vertical
      * @return  true if good posture
      */
-    public boolean measurePosture(int angle) {
+    boolean measurePosture(int angle) {
         return !(angle > mZAxisPosThreshold || angle < mZAxisNegThreshold);
     }
 
@@ -449,9 +447,9 @@ public class OrientationService extends Service {
      */
     private void vibrate( boolean longInterval ) {
         if( mAlertVibration ) {
-            int vibrationTime = SHORT_VIBRATION_TIME;
+            int vibrationTime = 30;         // short vibration time, units of milliseconds
             if (longInterval) {
-                vibrationTime = LONG_VIBRATION_TIME;
+                vibrationTime = 800;        // long vibration time, units of milliseconds
             }
 
             if (mVibrator != null) {
@@ -467,7 +465,7 @@ public class OrientationService extends Service {
      * This is the recommended way of implementing the listener for changes in shared preferences
      * Otherwise, the OS will garbage collect the listener.  This creates a strong reference.
      */
-    SharedPreferences.OnSharedPreferenceChangeListener prefListener =
+    private final SharedPreferences.OnSharedPreferenceChangeListener prefListener =
             new SharedPreferences.OnSharedPreferenceChangeListener() {
                 public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
                     setupPreference(key);
