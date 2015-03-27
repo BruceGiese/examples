@@ -46,8 +46,8 @@ public class OrientationService extends Service {
     public static boolean sIsRunning = false;
     private static OrientationService sInstance = null;
 
-    private static final int DEFAULT_Z_AXIS_POS_THRESHOLD = 20;     // units of degrees
-    private static final int DEFAULT_Z_AXIS_NEG_THRESHOLD = -20;    // units of degrees
+    private static final int DEFAULT_Z_AXIS_POS_THRESHOLD = 40;     // units of degrees
+    private static final int DEFAULT_Z_AXIS_NEG_THRESHOLD = -40;    // units of degrees
     private int mZAxisPosThreshold = DEFAULT_Z_AXIS_POS_THRESHOLD;  // sensitivity feature upgrade
     private int mZAxisNegThreshold = DEFAULT_Z_AXIS_NEG_THRESHOLD;  // sensitivity feature upgrade
 
@@ -56,9 +56,9 @@ public class OrientationService extends Service {
     * This hysteresis is only for the user's benefit in giving alerts.  It's not saved in data.
     * */
     private static final int POSITIVE_HYSTERESIS = 4;
-    private static final int NEGATIVE_HYSTERESIS = 8;
+    private static final int NEGATIVE_HYSTERESIS = 30;
     // number of additional consecutive bad posture samples before we issue a reminder
-    private static final int DEFAULT_BAD_REMINDER_THRESHOLD = 10;
+    private static final int DEFAULT_BAD_REMINDER_THRESHOLD = 30;
     private int mBadPostureReminderCountThreshold = DEFAULT_BAD_REMINDER_THRESHOLD; // sensitivity feature upgrade
     private static final int UPDATE_INTERVAL = 1;           // units of seconds
 

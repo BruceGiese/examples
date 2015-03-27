@@ -8,6 +8,7 @@
         android:key="@string/pref_notification"
         android:title="@string/pref_notification"
         android:summary="@string/pref_notification_summ"
+        android:contentDescription="@string/cdesc_pref_notification"
         android:textColor="@color/light_secondary_color"
         android:defaultValue="true"/>
 
@@ -16,6 +17,7 @@
         android:key="@string/pref_vibrate"
         android:title="@string/pref_vibrate"
         android:summary="@string/pref_vibrate_summ"
+        android:contentDescription="@string/cdesc_pref_vibrate"
         android:defaultValue="true"/>
 
     <CheckBoxPreference
@@ -23,6 +25,7 @@
         android:key="@string/pref_led"
         android:title="@string/pref_led"
         android:summary="@string/pref_led_summ"
+        android:contentDescription="@string/cdesc_pref_led"
         android:defaultValue="true"/>
 
     <CheckBoxPreference
@@ -30,6 +33,7 @@
         android:key="@string/pref_chin_tuck"
         android:title="@string/pref_chin_tuck"
         android:summary="@string/pref_chin_tuck_summ"
+        android:contentDescription="@string/cdesc_pref_chin_tuck"
         android:defaultValue="true"/>
 
 

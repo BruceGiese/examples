@@ -11,6 +11,7 @@
         android:layout_height="0dp"
         android:layout_weight="6"
         android:background="@color/neutral_main_color"
+        android:contentDescription="@string/cdesc_linechart"
         android:clickable="true"/>
 
     <TextView
@@ -23,7 +24,6 @@
         android:gravity="center"
         android:layout_height="0dp"
         android:layout_weight="1"/>
-
 
     <!-- LinearLayout leaves space for expansion, plus needed for using layout_weights -->
     <LinearLayout

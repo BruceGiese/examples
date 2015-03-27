@@ -15,6 +15,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.TextView;
+
 import com.activeandroid.query.Delete;
 import com.activeandroid.query.Select;
 import com.github.mikephil.charting.charts.LineChart;
@@ -217,6 +219,9 @@ public class GraphFragment extends Fragment {
                 mLineChart.setVisibleXRange(DATA_POINTS_TO_SHOW);
                 mLineChart.moveViewToX(mLineData.getXValCount() - DATA_POINTS_TO_SHOW);
             }
+            View chart = getActivity().findViewById(R.id.chart);
+            // This is for both testing and accessibility
+            chart.setContentDescription("index is" + mIndex + ", value is" + point.getVal());
             mIndex++;
             mLineChart.invalidate();
         } else {
