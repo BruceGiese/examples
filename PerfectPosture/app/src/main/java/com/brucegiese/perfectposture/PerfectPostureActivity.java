@@ -25,6 +25,7 @@ public class PerfectPostureActivity extends Activity {
     private final static int LAST_PAGE_NUM = SETTINGS_PAGE;
     private SectionsPagerAdapter mSectionsPagerAdapter;
     private ViewPager mViewPager;
+    private int mPosition;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +36,23 @@ public class PerfectPostureActivity extends Activity {
         mViewPager = (ViewPager) findViewById(R.id.pager);
         mViewPager.setOffscreenPageLimit(LAST_PAGE_NUM+1);
         mViewPager.setAdapter(mSectionsPagerAdapter);
+
+        mViewPager.setOnPageChangeListener( new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageSelected( int position) {
+                if( mPosition == 3 && position == 2 ) {
+                    // We changed from settings to the chart page.  Settings may have changed
+                    // TODO: replace the existing GraphFragment with a new one (or some other solution)
+                }
+            }
+
+            @Override public void onPageScrollStateChanged(int arg0){
+            }
+            @Override
+            public void onPageScrolled(int arg0, float arg1, int arg2) {
+            }
+
+        });
 
         final PagerTabStrip pts = (PagerTabStrip) findViewById(R.id.pager_tab_strip);
         pts.setTextColor(getResources().getColor(R.color.medium_secondary_color));

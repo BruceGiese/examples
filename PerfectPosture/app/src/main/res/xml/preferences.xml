@@ -1,11 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- The key String names here must match up with the Strings used in onSharedPreferenceChanged -->
+    <ListPreference
+        android:key="PREF_SENSITIVITY"
+        android:title="@string/pref_sensitivity"
+        android:summary="@string/pref_sensitivity_summ"
+        android:contentDescription="@string/cdesc_pref_sensitivity"
+        android:textColor="@color/light_secondary_color"
+        android:entries="@array/sensitivitylistentries"
+        android:entryValues="@array/sensitivitylistvalues"
+        android:defaultValue="2"/>
+
     <CheckBoxPreference
         android:widgetLayout="@layout/custom_checkbox"
         android:theme="@style/PerfectPostureActionBarTheme"
-        android:key="@string/pref_notification"
+        android:key="PREF_NOTIFICATION"
         android:title="@string/pref_notification"
         android:summary="@string/pref_notification_summ"
         android:contentDescription="@string/cdesc_pref_notification"
@@ -14,7 +23,7 @@
 
     <CheckBoxPreference
         android:widgetLayout="@layout/custom_checkbox"
-        android:key="@string/pref_vibrate"
+        android:key="PREF_VIBRATION"
         android:title="@string/pref_vibrate"
         android:summary="@string/pref_vibrate_summ"
         android:contentDescription="@string/cdesc_pref_vibrate"
@@ -22,7 +31,7 @@
 
     <CheckBoxPreference
         android:widgetLayout="@layout/custom_checkbox"
-        android:key="@string/pref_led"
+        android:key="PREF_LED"
         android:title="@string/pref_led"
         android:summary="@string/pref_led_summ"
         android:contentDescription="@string/cdesc_pref_led"
@@ -30,7 +39,7 @@
 
     <CheckBoxPreference
         android:widgetLayout="@layout/custom_checkbox"
-        android:key="@string/pref_chin_tuck"
+        android:key="PREF_CHIN_TUCK"
         android:title="@string/pref_chin_tuck"
         android:summary="@string/pref_chin_tuck_summ"
         android:contentDescription="@string/cdesc_pref_chin_tuck"

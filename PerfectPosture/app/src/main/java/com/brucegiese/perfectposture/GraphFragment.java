@@ -45,6 +45,7 @@ public class GraphFragment extends Fragment {
     private LineData mLineData;
     private DataReceiver mDataReceiver;
     private boolean mChartValid = false;
+    private View mView;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -56,9 +57,9 @@ public class GraphFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View v = inflater.inflate(R.layout.fragment_graph, container, false);
+        mView = inflater.inflate(R.layout.fragment_graph, container, false);
 
-        Button button = (Button) v.findViewById(R.id.clear_data_button);
+        Button button = (Button) mView.findViewById(R.id.clear_data_button);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -72,7 +73,7 @@ public class GraphFragment extends Fragment {
         /*
         *       Set up the chart
          */
-        mLineChart = (LineChart) v.findViewById(R.id.chart);
+        mLineChart = (LineChart) mView.findViewById(R.id.chart);
         mLineChart.setBackgroundColor(getResources().getColor(R.color.neutral_main_color));
         mLineChart.setDescription("");
         mLineChart.setNoDataText(getString(R.string.no_chart_data));
@@ -102,23 +103,7 @@ public class GraphFragment extends Fragment {
         yAxis.setSpaceTop(0.0f);       // leave this much percent space above max value
         yAxis.setSpaceBottom(0.0f);    // leave this much percent space below min value
 
-        LimitLine upperLimit = new LimitLine(20.0f, getString(R.string.max_forward_tilt));
-        upperLimit.setLineColor(getResources().getColor(R.color.chart_red));
-        upperLimit.setLineWidth(2f);
-        upperLimit.setTextColor(getResources().getColor(R.color.chart_red));
-        upperLimit.setTextSize(10f);
-        upperLimit.enableDashedLine(10, 10, 0);
-        upperLimit.setLabelPosition(LimitLine.LimitLabelPosition.POS_LEFT);
-
-        yAxis.addLimitLine(upperLimit);
-        LimitLine lowerLimit = new LimitLine(-20.0f, getString(R.string.max_backward_tilt));
-        lowerLimit.setLineColor(getResources().getColor(R.color.chart_red));
-        lowerLimit.setLineWidth(2f);
-        lowerLimit.setTextColor(getResources().getColor(R.color.chart_red));
-        lowerLimit.setTextSize(10f);
-        lowerLimit.enableDashedLine(10, 10, 0);
-        lowerLimit.setLabelPosition(LimitLine.LimitLabelPosition.POS_LEFT);
-        yAxis.addLimitLine(lowerLimit);
+        // The upper limit needs to be drawn during onResume() in case of configuration changes
 
         LimitLine zeroLimit = new LimitLine(0f, getString(R.string.best_posture));
         zeroLimit.setLineColor(getResources().getColor(R.color.chart_green));
@@ -160,7 +145,33 @@ public class GraphFragment extends Fragment {
         LocalBroadcastManager.getInstance(getActivity())
                 .registerReceiver(mDataReceiver, iFilter);
 
-        return v;
+        return mView;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        int posThreshold = OrientationService.getZAxisPositiveThreshold(getActivity());
+        int negThreshold = OrientationService.getZAxisNegativeThreshold(getActivity());
+        YAxis yAxis = mLineChart.getAxisLeft();
+        LimitLine upperLimit = new LimitLine((float)posThreshold, getString(R.string.max_forward_tilt));
+        upperLimit.setLineColor(getResources().getColor(R.color.chart_red));
+        upperLimit.setLineWidth(2f);
+        upperLimit.setTextColor(getResources().getColor(R.color.chart_red));
+        upperLimit.setTextSize(10f);
+        upperLimit.enableDashedLine(10, 10, 0);
+        upperLimit.setLabelPosition(LimitLine.LimitLabelPosition.POS_LEFT);
+        yAxis.addLimitLine(upperLimit);
+        LimitLine lowerLimit = new LimitLine((float)negThreshold, getString(R.string.max_backward_tilt));
+        lowerLimit.setLineColor(getResources().getColor(R.color.chart_red));
+        lowerLimit.setLineWidth(2f);
+        lowerLimit.setTextColor(getResources().getColor(R.color.chart_red));
+        lowerLimit.setTextSize(10f);
+        lowerLimit.enableDashedLine(10, 10, 0);
+        lowerLimit.setLabelPosition(LimitLine.LimitLabelPosition.POS_LEFT);
+        yAxis.addLimitLine(lowerLimit);
+        mLineChart.invalidate();
     }
 
     /**

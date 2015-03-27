@@ -16,6 +16,12 @@
     <string name="pref_chin_tuck_summ">Get an alert every 15 minutes to do a chin tuck exercise</string>
     <string name="cdesc_pref_chin_tuck">enable chin tuck exercise reminders</string>
     <string name="cdesc_pref_checkbox">checkbox for the previous preference description</string>
+    <string name="pref_sensitivity">Alert sensitivity setting</string>
+    <string name="pref_sensitivity_summ">This controls both the sensitivity and frequency of alerts.</string>
+    <string name="cdesc_pref_sensitivity">sensitivity setting</string>
+    <string name="sensitivity_low">Low</string>
+    <string name="sensitivity_medium">Medium</string>
+    <string name="sensitivity_high">High</string>
 
     <string name="start_tilt_detection">Start Posture Detection</string>
     <string name="stop_tilt_detection">Stop Posture Detection</string>
