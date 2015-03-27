@@ -97,7 +97,7 @@ public class OrientationService extends Service {
         BAD_POSTURE,
         CHIN_TUCK_REMINDER
     }
-    private final CommandReceiver mCommandReceiver;
+    private CommandReceiver mCommandReceiver;
 
     public OrientationService() {
         if( OrientationService.sInstance != null ) {
@@ -128,8 +128,6 @@ public class OrientationService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "onStartCommand() called");
-
         if( intent.getAction() != null) {
             switch( intent.getAction()) {
                 case TURN_OFF_SERVICE_ACTION:
@@ -223,6 +221,7 @@ public class OrientationService extends Service {
         }
 
         // Register the broadcast receiver
+        Log.d(TAG, "setting up the broadcast receiver for TURN_OFF_SERVICE_ACTION");
         IntentFilter iFilter = new IntentFilter();
         iFilter.addAction(TURN_OFF_SERVICE_ACTION);
         LocalBroadcastManager.getInstance(this)
