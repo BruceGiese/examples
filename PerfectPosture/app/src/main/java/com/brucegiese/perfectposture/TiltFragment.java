@@ -87,7 +87,6 @@ public class TiltFragment extends Fragment {
         if( ! OrientationService.sIsRunning) {
             Log.d(TAG, "onDestroy(): Stopping the service");
             Intent intent = new Intent(getActivity(), OrientationService.class);
-            // make it persistent by calling this before attempting to bind
             getActivity().stopService(intent);
         }
     }
@@ -119,7 +118,6 @@ public class TiltFragment extends Fragment {
         @Override
         public void onReceive(Context c, Intent i) {
             if( i.getAction().equals(OrientationService.CHECK_STATUS_INTENT)) {
-                Log.d(TAG, "Rechecking the button state based on a broadcast from the service");
                 checkAndSetButtonState();
             } else {
                 Log.e(TAG, "Received an unexpected broadcast intent");

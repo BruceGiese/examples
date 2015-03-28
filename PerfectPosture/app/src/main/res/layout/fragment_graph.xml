@@ -3,6 +3,7 @@
              android:layout_width="match_parent"
              android:layout_height="match_parent"
              android:orientation="vertical"
+             android:baselineAligned="false"
              tools:context="com.brucegiese.perfectposture.GraphFragment">
 
     <com.github.mikephil.charting.charts.LineChart
@@ -31,8 +32,7 @@
         android:layout_height="0dp"
         android:layout_weight="2"
         android:orientation="horizontal"
-        android:gravity="center"
-        style="@style/PerfectPostureBackground">
+        android:gravity="center">
 
         <Button
             android:id="@+id/clear_data_button"

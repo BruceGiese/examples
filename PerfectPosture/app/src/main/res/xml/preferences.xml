@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- The keys below must match the values in OrientationService -->
     <ListPreference
         android:key="PREF_SENSITIVITY"
         android:title="@string/pref_sensitivity"
@@ -44,6 +45,5 @@
         android:summary="@string/pref_chin_tuck_summ"
         android:contentDescription="@string/cdesc_pref_chin_tuck"
         android:defaultValue="true"/>
-
 
 </PreferenceScreen>

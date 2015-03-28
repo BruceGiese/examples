@@ -3,12 +3,13 @@ package com.brucegiese.perfectposture;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.content.Intent;
 import android.support.v13.app.FragmentPagerAdapter;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.PagerTabStrip;
 import android.support.v4.view.ViewPager;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 
 
 /**
@@ -19,12 +20,12 @@ import android.view.View;
  */
 public class PerfectPostureActivity extends Activity {
     private final static String TAG = "com.brucegiese.perfpost";
+    public final static String REDRAW_GRAPH_INTENT = "com.brucegiese.perfectposture.redraw";
     private final static int INTRO_CONTROL_PAGE = 0;
     private final static int DATA_PAGE = 1;
     private final static int SETTINGS_PAGE = 2;
     private final static int LAST_PAGE_NUM = SETTINGS_PAGE;
     private SectionsPagerAdapter mSectionsPagerAdapter;
-    private ViewPager mViewPager;
     private int mPosition;
 
     @Override
@@ -33,17 +34,19 @@ public class PerfectPostureActivity extends Activity {
         setContentView(R.layout.activity_perfect_posture);
 
         mSectionsPagerAdapter = new SectionsPagerAdapter(getFragmentManager());
-        mViewPager = (ViewPager) findViewById(R.id.pager);
-        mViewPager.setOffscreenPageLimit(LAST_PAGE_NUM+1);
-        mViewPager.setAdapter(mSectionsPagerAdapter);
+        ViewPager viewPager = (ViewPager) findViewById(R.id.pager);
+        viewPager.setOffscreenPageLimit(LAST_PAGE_NUM+1);
 
-        mViewPager.setOnPageChangeListener( new ViewPager.OnPageChangeListener() {
+        viewPager.setOnPageChangeListener( new ViewPager.OnPageChangeListener() {
             @Override
-            public void onPageSelected( int position) {
-                if( mPosition == 3 && position == 2 ) {
-                    // We changed from settings to the chart page.  Settings may have changed
-                    // TODO: replace the existing GraphFragment with a new one (or some other solution)
+            public void onPageSelected( int position) {     // pages are zero based
+                if (mPosition == 2 && position == 1) {
+                    // We changed from settings page to the chart page.  Settings may have changed
+                    // Tell the GraphFragment to redraw the red dotted lines, which may change
+                    Intent bcastIntent = new Intent(REDRAW_GRAPH_INTENT);
+                    LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(bcastIntent);
                 }
+                mPosition = position;
             }
 
             @Override public void onPageScrollStateChanged(int arg0){
@@ -53,6 +56,8 @@ public class PerfectPostureActivity extends Activity {
             }
 
         });
+
+        viewPager.setAdapter(mSectionsPagerAdapter);
 
         final PagerTabStrip pts = (PagerTabStrip) findViewById(R.id.pager_tab_strip);
         pts.setTextColor(getResources().getColor(R.color.medium_secondary_color));

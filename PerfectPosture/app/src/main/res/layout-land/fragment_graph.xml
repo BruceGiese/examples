@@ -15,7 +15,11 @@
         <com.github.mikephil.charting.charts.LineChart
             android:id="@+id/chart"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="0dp"
+            android:layout_weight="3"
+            android:background="@color/neutral_main_color"
+            android:contentDescription="@string/cdesc_linechart"
+            android:clickable="true"/>
 
         <TextView
             android:id="@+id/chart_label"
@@ -25,7 +29,8 @@
             android:textSize="18sp"
             android:layout_width="match_parent"
             android:gravity="center"
-            android:layout_height="wrap_content" />
+            android:layout_height="0dp"
+            android:layout_weight="1" />
 
     </LinearLayout>
 
@@ -35,15 +40,12 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
-        android:background="@color/neutral_main_color"
         android:orientation="vertical"
         android:gravity="center">
 
         <Button
             android:id="@+id/clear_data_button"
             android:text="@string/clear_data_button_text"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
             style="@style/PerfectPostureButton"/>
     </LinearLayout>
 

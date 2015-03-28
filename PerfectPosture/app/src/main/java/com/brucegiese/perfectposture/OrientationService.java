@@ -68,8 +68,12 @@ public class OrientationService extends Service {
     private int mPositiveHysteresis = MEDIUM_POSITIVE_HYSTERESIS;
     private int mNegativeHysteresis = MEDIUM_NEGATIVE_HYSTERESIS;
     // number of additional consecutive bad posture samples before we issue a reminder
-    private static final int DEFAULT_BAD_REMINDER_THRESHOLD = 30;
-    private int mBadPostureReminderCountThreshold = DEFAULT_BAD_REMINDER_THRESHOLD; // sensitivity feature upgrade
+    private static final int LOW_BAD_REMINDER_THRESHOLD = 10;
+    private static final int MEDIUM_BAD_REMINDER_THRESHOLD = 30;
+    private static final int HIGH_BAD_REMINDER_THRESHOLD = 120;
+    private int mBadPostureReminderThreshold = MEDIUM_BAD_REMINDER_THRESHOLD;
+    private final int CHIN_TUCK_REMINDER_TIME = 15;       // units of minutes
+    private final int CHIN_TUCK_REMINDER_DURATION = 1;    // units of minutes
     private static final int UPDATE_INTERVAL = 1;           // units of seconds
 
     private Orientation mOrientation = null;
@@ -103,13 +107,22 @@ public class OrientationService extends Service {
     public static final String TURN_OFF_SERVICE_ACTION = "com.brucegiese.perfectposture.serviceoff";
     private NotificationManager mNotificationManager;
 
+    // These must match the values in preferences.xml
+    // The reason for not using a @string value is that the user can change languages which would
+    // ...change the key if that language is implemented in this app.
+    private static final String PREF_SENSITIVITY = "PREF_SENSITIVITY";
+    private static final String PREF_NOTIFICATION = "PREF_NOTIFICATION";
+    private static final String PREF_VIBRATION = "PREF_VIBRATION";
+    private static final String PREF_LED = "PREF_LED";
+    private static final String PREF_CHIN_TUCK = "PREF_CHIN_TUCK";
+
     private enum NotificationType {
         SERVICE_RUNNING,
         BAD_POSTURE,
         CHIN_TUCK_REMINDER
     }
 
-    private CommandReceiver mCommandReceiver;
+    private final CommandReceiver mCommandReceiver;
 
     public OrientationService() {
         if (OrientationService.sInstance != null) {
@@ -131,7 +144,6 @@ public class OrientationService extends Service {
 
         mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-        loadSharedPreferences();
         SharedPreferences mPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         mPrefs.registerOnSharedPreferenceChangeListener(prefListener);      // listen for changes
 
@@ -154,6 +166,7 @@ public class OrientationService extends Service {
 
                 case TURN_ON_SERVICE_ACTION:
                     Log.d(TAG, "onStartCommand(): turning on the service");
+                    loadSharedPreferences();
                     startChecking();
                     break;
 
@@ -305,7 +318,7 @@ public class OrientationService extends Service {
 
                     // If posture stays bad for too long, remind the user
                     mBadPostureReminderCounter++;
-                    if (mBadPostureReminderCounter >= mBadPostureReminderCountThreshold) {
+                    if (mBadPostureReminderCounter >= mBadPostureReminderThreshold) {
                         mBadPostureReminderCounter = 0;
                         badPostureAlerts();
                     }
@@ -314,20 +327,19 @@ public class OrientationService extends Service {
 
             // Chin tuck reminder functionality
             if (mChinTuck) {        // if the functionality is enabled
+
                 // Note that the various types of notification may still be disabled.
-                int CHIN_TUCK_REMINDER_TIME = 15 * 60 / UPDATE_INTERVAL;    // first number is minutes
-                int CHIN_TUCK_REMINDER_DURATION = 1 * 60 / UPDATE_INTERVAL; // how long to leave the notification up
                 mChinTuckReminderCounter++;
                 if (!mChinTuckReminderState) {
                     // We're not currently reminding the user to do a chin tuck exercise
-                    if (mChinTuckReminderCounter > CHIN_TUCK_REMINDER_TIME) {
+                    if (mChinTuckReminderCounter > CHIN_TUCK_REMINDER_TIME * 60 / UPDATE_INTERVAL) {
                         mChinTuckReminderCounter = 0;
                         mChinTuckReminderState = true;
                         sendNotification(NotificationType.CHIN_TUCK_REMINDER, true);
                         vibrate(true);
                     }
                 } else {
-                    if (mChinTuckReminderCounter > CHIN_TUCK_REMINDER_DURATION) {
+                    if (mChinTuckReminderCounter > CHIN_TUCK_REMINDER_DURATION * 60 / UPDATE_INTERVAL) {
                         mChinTuckReminderCounter = 0;
                         mChinTuckReminderState = false;
                         sendNotification(NotificationType.CHIN_TUCK_REMINDER, false);
@@ -477,7 +489,6 @@ public class OrientationService extends Service {
     private final SharedPreferences.OnSharedPreferenceChangeListener prefListener =
             new SharedPreferences.OnSharedPreferenceChangeListener() {
                 public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
-                    Log.d(TAG, "pref change, key = " + key);
                     setupPreference(key);
                 }
             };
@@ -486,61 +497,62 @@ public class OrientationService extends Service {
         SharedPreferences sharedPrefs =
                 PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
-        Log.d(TAG, "getting preference for " + key);
-        if (key.equals("PREF_NOTIFICATION")) {
-            mAlertNotification = sharedPrefs.getBoolean(getString(R.string.pref_notification), DEFAULT_ALERT_NOTIFICATION);
-            if (!mAlertNotification) {
-                // remove all notifications that might be currently displayed
-                sendNotification(NotificationType.CHIN_TUCK_REMINDER, false);
-                sendNotification(NotificationType.BAD_POSTURE, false);
-//                sendNotification(NotificationType.SERVICE_RUNNING, false);
-            }
+        switch (key) {
+            case PREF_NOTIFICATION:
+                mAlertNotification = sharedPrefs.getBoolean(PREF_NOTIFICATION, DEFAULT_ALERT_NOTIFICATION);
+                if (!mAlertNotification) {
+                    // remove all notifications that might be currently displayed
+                    sendNotification(NotificationType.CHIN_TUCK_REMINDER, false);
+                    sendNotification(NotificationType.BAD_POSTURE, false);
+                    // sendNotification(NotificationType.SERVICE_RUNNING, false);
+                }
+                break;
 
-        } else if (key.equals("PREF_VIBRATION")) {
-            mAlertVibration = sharedPrefs.getBoolean(getString(R.string.pref_vibrate), DEFAULT_ALERT_VIBRATION);
+            case PREF_VIBRATION:
+                mAlertVibration = sharedPrefs.getBoolean(PREF_VIBRATION, DEFAULT_ALERT_VIBRATION);
+                break;
 
-        } else if (key.equals("PREF_LED")) {
-            mAlertLed = sharedPrefs.getBoolean(getString(R.string.pref_led), DEFAULT_ALERT_LED);
+            case PREF_LED:
+                mAlertLed = sharedPrefs.getBoolean(PREF_LED, DEFAULT_ALERT_LED);
+                break;
 
-        } else if (key.equals("PREF_CHIN_TUCK")) {
-            mChinTuck = sharedPrefs.getBoolean(getString(R.string.pref_chin_tuck), DEFAULT_ALERT_CHIN_TUCK);
-            if (!mChinTuck) {
-                // remove any chin tuck notification that might be currently displayed
-                sendNotification(NotificationType.CHIN_TUCK_REMINDER, false);
-            }
-        } else if (key.equals("PREF_SENSITIVITY")) {
-            Log.d(TAG, "selection is...");
-            Log.d(TAG, "..." + sharedPrefs.getString("PREF_SENSITIVITY", "2"));
-            switch (Integer.valueOf(sharedPrefs.getString("PREF_SENSITIVITY", "2"))) {
+            case PREF_CHIN_TUCK:
+                mChinTuck = sharedPrefs.getBoolean(PREF_CHIN_TUCK, DEFAULT_ALERT_CHIN_TUCK);
+                if (!mChinTuck) {
+                    // remove any chin tuck notification that might be currently displayed
+                    sendNotification(NotificationType.CHIN_TUCK_REMINDER, false);
+                }
+                break;
 
-                case 1:
-                    Log.d(TAG, "user selected low sensitivity setting");
-                    mPositiveHysteresis = LOW_POSITIVE_HYSTERESIS;
-                    mNegativeHysteresis = LOW_NEGATIVE_HYSTERESIS;
-                    mZAxisPosThreshold = LOW_Z_AXIS_POS_THRESHOLD;
-                    mZAxisNegThreshold = LOW_Z_AXIS_NEG_THRESHOLD;
-                    break;
+            case PREF_SENSITIVITY:
+                // These are split out because GraphFragment needs them, too.
+                mZAxisPosThreshold = getZAxisPositiveThreshold(this);
+                mZAxisNegThreshold = getZAxisNegativeThreshold(this);
+                switch (Integer.valueOf(sharedPrefs.getString(PREF_SENSITIVITY, "2"))) {
 
-                case 2:
-                    Log.d(TAG, "user selected medium sensitivity setting");
-                    mPositiveHysteresis = MEDIUM_POSITIVE_HYSTERESIS;
-                    mNegativeHysteresis = MEDIUM_NEGATIVE_HYSTERESIS;
-                    mZAxisPosThreshold = MEDIUM_Z_AXIS_POS_THRESHOLD;
-                    mZAxisNegThreshold = MEDIUM_Z_AXIS_NEG_THRESHOLD;
-                    break;
+                    case 1:
+                        mPositiveHysteresis = LOW_POSITIVE_HYSTERESIS;
+                        mNegativeHysteresis = LOW_NEGATIVE_HYSTERESIS;
+                        mBadPostureReminderThreshold = LOW_BAD_REMINDER_THRESHOLD;
+                        break;
 
-                case 3:
-                    Log.d(TAG, "user selected high sensitivity setting");
-                    mPositiveHysteresis = HIGH_POSITIVE_HYSTERESIS;
-                    mNegativeHysteresis = HIGH_NEGATIVE_HYSTERESIS;
-                    mZAxisPosThreshold = HIGH_Z_AXIS_POS_THRESHOLD;
-                    mZAxisNegThreshold = HIGH_Z_AXIS_NEG_THRESHOLD;
-                    break;
+                    case 2:
+                        mPositiveHysteresis = MEDIUM_POSITIVE_HYSTERESIS;
+                        mNegativeHysteresis = MEDIUM_NEGATIVE_HYSTERESIS;
+                        mBadPostureReminderThreshold = MEDIUM_BAD_REMINDER_THRESHOLD;
+                        break;
 
-                default:
-                    Log.e(TAG, "invalid sensitivity setting");
-                    break;
-            }
+                    case 3:
+                        mPositiveHysteresis = HIGH_POSITIVE_HYSTERESIS;
+                        mNegativeHysteresis = HIGH_NEGATIVE_HYSTERESIS;
+                        mBadPostureReminderThreshold = HIGH_BAD_REMINDER_THRESHOLD;
+                        break;
+
+                    default:
+                        Log.e(TAG, "invalid sensitivity setting");
+                        break;
+                }
+                break;
         }
     }
 
@@ -550,11 +562,11 @@ public class OrientationService extends Service {
     private void loadSharedPreferences() {
         // the getAll() method isn't going to work with the support library ArrayMap.
         // so just grab each value one-by-one.
-        setupPreference(getString(R.string.pref_notification));
-        setupPreference(getString(R.string.pref_vibrate));
-        setupPreference(getString(R.string.pref_led));
-        setupPreference(getString(R.string.pref_chin_tuck));
-        setupPreference(getString(R.string.pref_sensitivity));
+        setupPreference(PREF_NOTIFICATION);
+        setupPreference(PREF_VIBRATION);
+        setupPreference(PREF_LED);
+        setupPreference(PREF_CHIN_TUCK);
+        setupPreference(PREF_SENSITIVITY);
     }
 
     /**
@@ -566,10 +578,9 @@ public class OrientationService extends Service {
     public static int getZAxisPositiveThreshold(Context c) {
         SharedPreferences sharedPrefs =
                 PreferenceManager.getDefaultSharedPreferences(c);
-        switch (Integer.valueOf(sharedPrefs.getString("PREF_SENSITIVITY", "2"))) {
+        switch (Integer.valueOf(sharedPrefs.getString(PREF_SENSITIVITY, "2"))) {
 
             case 1:
-                Log.d(TAG, "user selected low sensitivity setting");
                 return LOW_Z_AXIS_POS_THRESHOLD;
 
             case 2:
@@ -593,10 +604,9 @@ public class OrientationService extends Service {
     public static int getZAxisNegativeThreshold(Context c) {
         SharedPreferences sharedPrefs =
                 PreferenceManager.getDefaultSharedPreferences(c);
-        switch (Integer.valueOf(sharedPrefs.getString("PREF_SENSITIVITY", "2"))) {
+        switch (Integer.valueOf(sharedPrefs.getString(PREF_SENSITIVITY, "2"))) {
 
             case 1:
-                Log.d(TAG, "user selected low sensitivity setting");
                 return LOW_Z_AXIS_NEG_THRESHOLD;
 
             case 2:
@@ -620,7 +630,6 @@ public class OrientationService extends Service {
         @Override
         public void onReceive(Context c, Intent i) {
             if( i.getAction().equals(TURN_OFF_SERVICE_ACTION)) {
-                Log.d(TAG, "received an Intent telling us to stop the service");
                 stopChecking();
             } else {
                 Log.e(TAG, "Received an unexpected broadcast intent");

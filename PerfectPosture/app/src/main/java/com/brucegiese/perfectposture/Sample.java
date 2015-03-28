@@ -10,6 +10,7 @@ import com.activeandroid.annotation.Table;
 
 import java.util.Date;
 
+@SuppressWarnings("FieldCanBeLocal")
 @Table(name="Sample", id= BaseColumns._ID)
 class Sample extends Model {
     @Column(name="Value")
