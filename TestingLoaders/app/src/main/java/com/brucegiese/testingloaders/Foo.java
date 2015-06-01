@@ -9,7 +9,7 @@ import com.activeandroid.annotation.Table;
 import java.io.Serializable;
 
 
-@Table(name="Foo", id = BaseColumns._ID)
+@Table(name="Foo",id=BaseColumns._ID)
 public class Foo extends Model implements Serializable {
 
     @Column( name= "a")

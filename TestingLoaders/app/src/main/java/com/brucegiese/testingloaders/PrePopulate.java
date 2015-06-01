@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PrePopulate {
-    private static final String TAG = "loaders.prepop";
+    private static final String TAG = "prepop";
 
     private List<Foo> mFoos = null;
     private AtomicBoolean mStartedCreatingFoos = new AtomicBoolean(false);
