@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">TestingActiveAndroid</string>
+
+    <string name="alive_text">Yeah, it\'s running</string>
+</resources>

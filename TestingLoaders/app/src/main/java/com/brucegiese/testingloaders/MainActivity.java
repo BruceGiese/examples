@@ -42,7 +42,7 @@ public class MainActivity extends Activity
         Fragment fragment = (Fragment) fm.findFragmentById(R.id.fragment_container);
 
         if( fragment == null ) {
-            fragment = LoaderFragment.newInstance("This is a new fragment", 42);
+            fragment = new LoaderFragment();
             fm.beginTransaction().add(R.id.fragment_container, fragment).commit();
         }
 

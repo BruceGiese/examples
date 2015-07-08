@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">TestingLoaders</string>
 
+    <string name="description">This app demonstrates a cursor loader with manual data manipulation
+        between the database and the cursor</string>
 
 </resources>
