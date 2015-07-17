@@ -2,6 +2,7 @@ package com.brucegiese.testingactiveandroid;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.activeandroid.ActiveAndroid;
@@ -11,6 +12,7 @@ import java.util.List;
 
 
 public class MainActivity extends Activity {
+    private static final String TAG = "AAtest";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,39 +38,80 @@ public class MainActivity extends Activity {
         Bar bar4 = new Bar("User Bar4");
         bar4.save();
 
-//        Follow follow1 = new Follow( foo1, bar2);
         Follow follow1 = new Follow( foo1, foo2);
         follow1.save();
 
-//        Follow follow2 = new Follow( foo1, bar3);
         Follow follow2 = new Follow( foo1, foo3);
         follow2.save();
 
-//        Follow follow3 = new Follow( foo1, bar4);
         Follow follow3 = new Follow( foo1, foo4);
         follow3.save();
 
+        Follow follow4 = new Follow( foo4, foo1);
+        follow4.save();
+
+        Follow follow5 = new Follow( foo3, foo2);
+        follow5.save();
 
 
-        List<Follow> followList = new Select()
-                .from(Follow.class)
-                .where("Follower = ? AND Followed = ?", foo1.getId(), foo2.getId())
-//                .where("Follower = ? AND Followed = ?", foo1.getId(), bar2.getId())
-                .execute();
+        checkBoth(foo1.getId(), foo2.getId());
+        checkFollower(foo1.getId());
+        checkFollowed(foo2.getId());
 
-        if( followList.size() != 1 ) {
-            Toast.makeText(this, "We got " + followList.size() + " Follow objects back", Toast.LENGTH_LONG).show();
-        } else {
-            if( followList.get(0).mFollower.equals(foo1) ) {
-                Toast.makeText(this, "Success!!!", Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(this, "We got the wrong Follow: " + followList.get(0).mFollower.mUser
-                        + ", " + followList.get(0).mFollowed.mUser, Toast.LENGTH_LONG).show();
-            }
-        }
+        Log.i(TAG, "Deleting foo4,foo1 follow");
+        follow4.delete();
+        Log.i(TAG, "Deleting foo3, foo2 follow");
+        follow5.delete();
 
+        checkBoth(foo1.getId(), foo2.getId());
+        checkFollower(foo1.getId());
+        checkFollowed(foo2.getId());
 
     }
 
+
+
+
+    void checkBoth(long follower, long followed) {
+
+        Log.i(TAG, "Fetching where follower = " + follower + " AND followed = " + followed);
+
+        List<Follow> followList = new Select()
+                .from(Follow.class)
+                .where("Follower = ? AND Followed = ?", follower, followed)
+                .execute();
+
+        for( Follow f : followList ) {
+            Log.i(TAG, "... " + f.mFollower.mUser + ", " + f.mFollowed.mUser);
+        }
+    }
+
+    void checkFollower(long follower) {
+
+        Log.i(TAG, "Fetching where follower = " + follower);
+
+        List<Follow> followList = new Select()
+                .from(Follow.class)
+                .where("Follower = ?", follower)
+                .execute();
+
+        for( Follow f : followList ) {
+            Log.i(TAG, "... " + f.mFollower.mUser + ", " + f.mFollowed.mUser);
+        }
+    }
+
+    void checkFollowed(long followed) {
+
+        Log.i(TAG, "Fetching where followeD = " + followed);
+
+        List<Follow> followList = new Select()
+                .from(Follow.class)
+                .where("Followed = ?", followed)
+                .execute();
+
+        for( Follow f : followList ) {
+            Log.i(TAG, "... " + f.mFollower.mUser + ", " + f.mFollowed.mUser);
+        }
+    }
 
 }

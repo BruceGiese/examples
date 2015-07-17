@@ -14,7 +14,6 @@ public class Follow extends Model {
 
     @Column(name="Followed", onDelete= Column.ForeignKeyAction.CASCADE)
     public Foo mFollowed;
-//    public Bar mFollowed;
 
 
     @SuppressWarnings("unused")
@@ -23,7 +22,6 @@ public class Follow extends Model {
     }
 
     public Follow(Foo follower, Foo followed) {
-//    public Follow(Foo follower, Bar followed) {
         super();
         mFollower = follower;
         mFollowed = followed;
